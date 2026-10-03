@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#e9edf3">
+<title>ハリセン工場パトロール</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23fbfbfd' stroke='%232f2a3a' stroke-width='2'/%3E%3Cellipse cx='16' cy='15' rx='10' ry='4.5' fill='%23ffd9b8'/%3E%3Cpath d='M6 19q10-3 20 0v5q-10 4-20 0z' fill='%23eef4fb' stroke='%232f2a3a' stroke-width='1.5'/%3E%3Ccircle cx='11.5' cy='15' r='2.4' fill='%23fff' stroke='%232f2a3a' stroke-width='1.2'/%3E%3Ccircle cx='20.5' cy='15' r='2.4' fill='%23fff' stroke='%232f2a3a' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='15.3' r='1.1' fill='%232f2a3a'/%3E%3Ccircle cx='21' cy='15.3' r='1.1' fill='%232f2a3a'/%3E%3Cpath d='M8 11l5 1.5M24 11l-5 1.5' stroke='%232f2a3a' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="fx"><div id="fxVig"></div><div id="fxRed"></div><div id="fxBlue"></div></div>
+
+<!-- ゲーム中の表示 -->
+<div id="hud" class="hidden">
+  <div class="hud-left">
+    <div class="hp">
+      <svg class="heart" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.6 4.6 0 0 1 8-3 4.6 4.6 0 0 1 8 3c0 5.8-8 11-8 11z" fill="#ff5a7e" stroke="#2f2a3a" stroke-width="2.2" stroke-linejoin="round"/><circle cx="8.2" cy="8.6" r="1.6" fill="#fff"/></svg>
+      <div class="hp-bar"><div class="hp-fill" id="hpFill"></div><span class="hp-text" id="hpText">100</span></div>
+    </div>
+    <div class="score-box"><span class="label">スコア</span><span class="score" id="score">0</span></div>
+    <div class="combo hidden" id="combo"><span class="combo-n" id="comboN"></span><span class="combo-m" id="comboM"></span><div class="combo-bar"><div id="comboFill"></div></div></div>
+    <div class="weapon normal" id="weapon"><span class="w-label">ハリセン</span><b id="weaponName">ふつうのハリセン</b><i id="weaponUses">∞</i></div>
+  </div>
+  <div class="hud-center">
+    <div class="timer" id="timer">3:00</div>
+    <div class="stage-label" id="stageLabel">ステージ1</div>
+    <div class="gauge" id="gauge"><span id="gaugeText">改心 0 / 5</span><div class="gauge-bar"><div id="gaugeFill"></div></div></div>
+    <div class="bossbar hidden" id="bossBar"><span id="bossName">イジワルおばさん</span><div class="boss-bar"><div id="bossFill"></div></div></div>
+  </div>
+  <div class="hud-right">
+    <canvas id="minimap"></canvas>
+    <div class="btns">
+      <button id="btnSound" class="icon-btn" aria-label="おと"><svg viewBox="0 0 24 24"><path id="iconSound" d="M4 9v6h4l5 4V5L8 9H4z" fill="#fff" stroke="#2f2a3a" stroke-width="2" stroke-linejoin="round"/><g id="iconWaves" fill="none" stroke="#2f2a3a" stroke-width="2.2" stroke-linecap="round"><path d="M16 9.5c1.2 1.5 1.2 3.5 0 5"/><path d="M18.5 7c2.2 3 2.2 7 0 10"/></g></svg></button>
+      <button id="btnPause" class="icon-btn" aria-label="ポーズ"><svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" rx="1.5" fill="#fff" stroke="#2f2a3a" stroke-width="2"/><rect x="14" y="5" width="4" height="14" rx="1.5" fill="#fff" stroke="#2f2a3a" stroke-width="2"/></svg></button>
+    </div>
+  </div>
+</div>
+
+<div id="stickL" class="stick hidden"><div class="ring"></div><div class="knob"></div></div>
+<div id="stickR" class="stick right hidden"><div class="ring"></div><div class="knob"></div></div>
+
+<div id="touchHints"><div class="th l" id="thL">左で<br>うごく</div><div class="th r" id="thR">右で ねらって<br>たたく</div></div>
+
+<div id="toast" class="hidden"></div>
+<div id="banner" class="hidden"></div>
+<div id="hint" class="hidden"><span class="pc-only">WASD / 矢印で うごく ・ マウスで ねらって クリック連打で ハリセン! 目つきの わるい人を さがそう</span><span class="touch-only">左がわで うごく ・ 右がわで ねらって たたく! 目つきの わるい人を さがそう</span></div>
+
+<!-- タイトル -->
+<div id="title" class="overlay">
+  <div class="card title-card">
+    <div class="logo">
+      <div class="logo-small">目つきの わるい人を さがして スパーン!</div>
+      <h1><span class="l1">ハリセン</span><span class="l2">工場</span><span class="l3">パトロール</span></h1>
+    </div>
+    <p class="lead">白菜とキャベツの工場で、<b class="bad-t">サボる人・悪口を言う人・じゃまする人</b>を見つけて ハリセンで なんども たたこう!<br>みんな マスクと白い服で <b>見えるのは 目元だけ</b>。<b class="good-t">まじめな人</b>を たたくと マイナス。改心させると <b class="boss-t">イジワルおばさん</b>が やってくる!</p>
+    <div class="eyes-row">
+      <div class="eye-card good"><canvas id="eyeGood" width="140" height="140"></canvas><b>まじめな人</b><span>まるい目・やさしい まゆ</span></div>
+      <div class="eye-card bad"><canvas id="eyeBad" width="140" height="140"></canvas><b>わるい人</b><span>細い目・つりあがった まゆ</span></div>
+      <div class="eye-card boss"><canvas id="eyeBoss" width="140" height="140"></canvas><b>おばさん</b><span>顔が大きい・暗いオーラ</span></div>
+    </div>
+    <div class="row-label">なんいど</div>
+    <div class="diffs">
+      <button class="diff-btn" data-diff="easy"><b>やさしい</b><span>悪い人に 紫のオーラ</span></button>
+      <button class="diff-btn" data-diff="normal"><b>ふつう</b><span>目と行動で 見わける</span></button>
+      <button class="diff-btn" data-diff="hard"><b>むずかしい</b><span>ふりが 上手・再発が 早い</span></button>
+    </div>
+    <div class="row-label">ステージ</div>
+    <div class="stages">
+      <button class="stage-btn" data-stage="0"><b>1</b><span>白菜ライン</span></button>
+      <button class="stage-btn" data-stage="1"><b>2</b><span>キャベツライン</span><i>ステージ1を クリア</i></button>
+      <button class="stage-btn" data-stage="2"><b>3</b><span>出荷フロア</span><i>ステージ2を クリア</i></button>
+    </div>
+    <button id="btnStart" class="big-btn">パトロール 開始!</button>
+    <div class="meta-btns"><button id="btnHowto" class="sub-btn">あそびかた</button></div>
+    <div class="best">ハイスコア <b id="bestTitle">0</b></div>
+  </div>
+</div>
+
+<!-- あそびかた -->
+<div id="howto" class="overlay hidden">
+  <div class="card howto-card">
+    <h2>あそびかた</h2>
+    <ul class="legend" id="legendPics">
+      <li><canvas id="ic-good" width="100" height="100"></canvas><b>まじめな人</b><span>台で 白菜を 切ったり はこづめ。たたくと <b class="minus">-200</b>、こちらも げんきが へる</span></li>
+      <li class="bad"><canvas id="ic-slacker" width="100" height="100"></canvas><b>サボり</b><span>かべに もたれて スマホ・あくび・Zzz。近づくと はたらく ふりをする</span></li>
+      <li class="bad"><canvas id="ic-gossip" width="100" height="100"></canvas><b>悪口コンビ</b><span>すみっこで ヒソヒソ 人の悪口。近づくと だまる</span></li>
+      <li class="bad"><canvas id="ic-sabo" width="100" height="100"></canvas><b>じゃまする人</b><span>はたらく人に ちょっかいを 出して こまらせる</span></li>
+      <li class="boss-l"><canvas id="ic-boss" width="100" height="100"></canvas><b>イジワルおばさん</b><span>人を いびる。いびっている あいだは <b>ダメージ2倍</b>。5連打で めまい。ガミガミの 赤いゾーンから にげろ</span></li>
+      <li class="pick"><canvas id="ic-harisen" width="100" height="100"></canvas><b>ハリセン 3種</b><span><b>ふつう</b>: いつでも / <b>ジャンボ</b>: ひろく つよく ふっとばす / <b>ビリビリ</b>: 近くの悪い人にも 電気が はしる。床に 落ちているのを ひろう</span></li>
+    </ul>
+    <p class="howto-text">悪い人を なんども たたくと <b>「ごめんなさい!」と 改心</b>して まじめに はたらきはじめる(頭の上に ★)。でも しばらくすると <b>また サボりだす</b>。<br>改心させた人数が たまると <b>イジワルおばさん</b>が 搬入口から やってくる。倒せば ステージクリア! 残り時間は ボーナス。</p>
+    <div class="controls">
+      <div class="pc-only"><b>PC</b> WASD/矢印: うごく ・ マウス: ねらう ・ クリック/スペース/J: ハリセン(おしっぱなしで 連打) ・ P: ポーズ ・ M: おと</div>
+      <div class="touch-only"><b>スマホ</b> 左がわ ドラッグ: うごく ・ 右がわ ドラッグ: ねらって 連打</div>
+    </div>
+    <button id="btnHowtoClose" class="sub-btn">とじる</button>
+  </div>
+</div>
+
+<!-- ポーズ -->
+<div id="pause" class="overlay hidden">
+  <div class="card small">
+    <h2>ポーズ</h2>
+    <button id="btnResume" class="big-btn">つづける</button>
+    <button id="btnQuit" class="sub-btn">タイトルへ</button>
+  </div>
+</div>
+
+<!-- けっか -->
+<div id="result" class="overlay hidden">
+  <div class="card result-card">
+    <h2 id="resTitle">ステージクリア!</h2>
+    <div class="rank" id="resRank">A</div>
+    <div class="rank-msg" id="resMsg"></div>
+    <div class="res-score"><span>スコア</span><b id="resScore">0</b></div>
+    <div class="newbest hidden" id="resNew">ハイスコア こうしん!</div>
+    <ul class="res-stats" id="resStats"></ul>
+    <button id="btnNext" class="big-btn hidden">つぎの ステージへ</button>
+    <button id="btnRetry" class="big-btn">もういちど!</button>
+    <button id="btnToTitle" class="sub-btn">タイトルへ</button>
+  </div>
+</div>
+
+<script src="js/util.js"></script>
+<script src="js/config.js"></script>
+<script src="js/world.js"></script>
+<script src="js/art.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/input.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/render.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
