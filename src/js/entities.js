@@ -175,11 +175,12 @@ function workerEyes(w) {
   if (w.state === 'stagger') return { mode: 'x' };
   if (w.state === 'dizzy') return { mode: 'spiral' };
   if (w.state === 'bow') return { mode: 'closed' };
-  const base = { slacker: 0.8, gossip: 0.9, sabo: 1, minion: 1 }[w.kind] || 1;
-  const k = cue === 0 ? 1 : cue === 1 ? 0.82 : 0.62;
+  const base = { slacker: 0.9, gossip: 1, sabo: 1, minion: 1 }[w.kind] || 1;
+  const k = cue === 0 ? 1 : cue === 1 ? 0.95 : 0.82;
   const pretend = w.state === 'pretend';
-  const mean = base * k * (pretend ? (cue === 2 ? 0.6 : 0.78) : 1);
-  const o = { mean, vein: cue <= 1 && !pretend && (w.kind === 'sabo' || w.kind === 'minion' || w.hitT > 0) };
+  const mean = Math.min(1, base * k * (pretend ? (cue === 2 ? 0.72 : 0.82) : 1));
+  const grin = !pretend && (cue <= 1 || w.state === 'bother' || w.state === 'gossip');
+  const o = { mean, grin, vein: cue <= 1 && !pretend && (w.kind === 'sabo' || w.kind === 'minion' || w.hitT > 0) };
   if (w.kind === 'slacker') { o.droop = pretend ? 0 : 0.6; o.look = { x: 0, y: pretend ? -0.4 : 0.9 }; }
   if (w.kind === 'gossip') { o.smirk = 1; o.look = { x: pretend ? -w.face : w.face * 0.9, y: 0.1 }; }
   if (w.kind === 'sabo' || w.kind === 'minion') { o.look = { x: w.face, y: 0 }; }

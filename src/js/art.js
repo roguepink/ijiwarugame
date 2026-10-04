@@ -199,8 +199,14 @@ const Art = (() => {
     }
     for (const sx of [-1, 1]) {
       const ex = sx * ex0 + lx * 0.4;
+      // いじわるな目のまわりの暗い影
+      if (mean > 0.45) {
+        const gr = g.createRadialGradient(ex, ey - eh * 0.4, ew * 0.4, ex, ey - eh * 0.4, ew * 1.9);
+        gr.addColorStop(0, `rgba(70,20,90,${0.42 * mean})`); gr.addColorStop(1, 'rgba(70,20,90,0)');
+        g.fillStyle = gr; g.beginPath(); g.ellipse(ex, ey - eh * 0.4, ew * 1.9, eh * 2.6 + 2 * sz, 0, 0, TAU); g.fill();
+      }
       // 白目
-      g.beginPath(); g.ellipse(ex, ey, ew, eh, 0, 0, TAU); fillStroke(g, o.bloodshot ? '#fff0ec' : '#fff', 1.6 * sz);
+      g.beginPath(); g.ellipse(ex, ey, ew, eh, 0, 0, TAU); fillStroke(g, o.bloodshot ? '#fff0ec' : mean > 0.6 ? '#fff6d8' : '#fff', (1.6 + mean * 0.6) * sz);
       g.save(); g.beginPath(); g.ellipse(ex, ey, ew, eh, 0, 0, TAU); g.clip();
       // 黒目: いじわるほど小さい
       const pr = (2.3 * sz) * (1 - mean * 0.35);
@@ -238,9 +244,9 @@ const Art = (() => {
       const ex = sx * ex0;
       const by = ey - (5.6 + (o.browUp || 0)) * sz;
       const inner = ex - sx * ew * 0.9; const outer = ex + sx * ew * 1.05;
-      const innerY = by + mean * 3.2 * sz + (smirk && sx === face ? -2.5 * sz : 0);
-      const outerY = by - mean * 1.6 * sz + (smirk && sx === face ? 1.5 * sz : 0);
-      g.strokeStyle = o.browCol || OUT; g.lineWidth = thick + mean * 0.9 * sz; g.lineCap = 'round';
+      const innerY = by + mean * 4.4 * sz + (smirk && sx === face ? -2.5 * sz : 0);
+      const outerY = by - mean * 2.6 * sz + (smirk && sx === face ? 1.5 * sz : 0);
+      g.strokeStyle = o.browCol || OUT; g.lineWidth = thick + mean * 1.5 * sz; g.lineCap = 'round';
       g.beginPath(); g.moveTo(inner, innerY); g.quadraticCurveTo((inner + outer) / 2, Math.min(innerY, outerY) - (1 - mean) * 1.6 * sz, outer, outerY); g.stroke();
     }
     if (mean > 0.5 && o.vein) { // こめかみの怒りマーク
@@ -275,6 +281,15 @@ const Art = (() => {
     g.restore();
     // マスクのひも
     g.strokeStyle = 'rgba(80,100,140,0.5)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-r * 0.86, r * 0.42); g.lineTo(-r * 0.99, r * 0.15); g.moveTo(r * 0.86, r * 0.42); g.lineTo(r * 0.99, r * 0.15); g.stroke();
+    // マスク越しに口がニヤリと持ち上がる(いじわるな人)
+    const em = (o.eyes && o.eyes.mean) || 0;
+    if (o.eyes && o.eyes.grin) {
+      const k = r / 16;
+      g.strokeStyle = 'rgba(70,40,90,0.75)'; g.lineWidth = 1.8 * k; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(-r * 0.42 * face, r * 0.7); g.quadraticCurveTo(0, r * 0.84, r * 0.4 * face, r * 0.58); g.lineTo(r * 0.5 * face, r * 0.5); g.stroke();
+      g.lineWidth = 1.2 * k; g.beginPath(); g.moveTo(r * 0.5 * face, r * 0.62); g.quadraticCurveTo(r * 0.58 * face, r * 0.56, r * 0.55 * face, r * 0.47); g.stroke();
+    }
+    void em;
     // 目
     g.save(); g.translate(0, r * 0.0); drawEyes(g, Object.assign({ r, face, skin: o.skin || SKIN }, o.eyes || {})); g.restore();
     // ほっぺ(やさしい人だけ)
@@ -363,16 +378,16 @@ const Art = (() => {
     // 頭
     g.save();
     const hx = face * 1.2 + (run ? face * 0.8 : 0);
-    g.translate(hx, -40 + (run ? Math.sin(wt * 2) * 0.6 : 0));
+    g.translate(hx, -46 + (run ? Math.sin(wt * 2) * 0.6 : 0));
     if (pose === 'bow') g.translate(0, 5);
     eyes.t = t;
-    if (eyes.size == null) eyes.size = 1.22;
-    drawHoodHead(g, { r: 16, face, eyes, blush: o.blush, badge: o.badge });
+    if (eyes.size == null) eyes.size = 1.7;
+    drawHoodHead(g, { r: 22, face, eyes, blush: o.blush, badge: o.badge });
     g.restore();
     g.restore();
     // 頭の上のしるし
     if (o.marker) o.marker(g, bob);
-    if (pose === 'dizzy' || o.dizzy) { for (let i = 0; i < 3; i++) { const a = t * 5 + (i * TAU) / 3; star(g, Math.cos(a) * 13 * sc, (-58 + bob) * sc + Math.sin(a) * 3, 3.4, a, '#ffe14d', 1.2); } }
+    if (pose === 'dizzy' || o.dizzy) { for (let i = 0; i < 3; i++) { const a = t * 5 + (i * TAU) / 3; star(g, Math.cos(a) * 17 * sc, (-74 + bob) * sc + Math.sin(a) * 3, 4.4, a, '#ffe14d', 1.4); } }
   }
 
   // ---------- 主人公(パトロール) ----------
@@ -444,17 +459,17 @@ const Art = (() => {
     freeArm(-face);
     // 頭
     g.save();
-    g.translate(face * 1.2 + (run ? face * 0.8 : 0), -40.5 + (run ? Math.sin(wt * 2) * 0.6 : 0));
+    g.translate(face * 1.2 + (run ? face * 0.8 : 0), -46.5 + (run ? Math.sin(wt * 2) * 0.6 : 0));
     const look = { x: Math.cos(P.aim), y: Math.sin(P.aim) };
-    const eyes = hurt ? { mode: 'x', size: 1.22 } : (P.sadT > 0 ? { mode: 'tear', look, browUp: 1, size: 1.22 } : { mean: 0, look, size: 1.25, mode: (P.happyT > 0 ? 'happy' : undefined) });
+    const eyes = hurt ? { mode: 'x', size: 1.7 } : (P.sadT > 0 ? { mode: 'tear', look, browUp: 1, size: 1.7 } : { mean: 0, look, size: 1.72, mode: (P.happyT > 0 ? 'happy' : undefined) });
     eyes.t = t;
-    drawHoodHead(g, { r: 16.5, face, eyes, blush: true, hood: '#ffffff' });
+    drawHoodHead(g, { r: 22, face, eyes, blush: true, hood: '#ffffff' });
     // 「パトロール」の帽子マーク(頭巾の上の赤いライン)
-    g.strokeStyle = '#e8445a'; g.lineWidth = 2.8; g.lineCap = 'round'; g.beginPath(); g.moveTo(-10, -9.5); g.quadraticCurveTo(0, -14, 10, -9.5); g.stroke();
+    g.strokeStyle = '#e8445a'; g.lineWidth = 3.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(-13.5, -13); g.quadraticCurveTo(0, -19, 13.5, -13); g.stroke();
     g.restore();
     if (!fanBehind) fanArm();
     g.restore();
-    if (P.stunT > 0) { for (let i = 0; i < 3; i++) { const a = t * 5 + (i * TAU) / 3; star(g, Math.cos(a) * 13, -58 + bob + Math.sin(a) * 3, 3.4, a, '#ffe14d', 1.2); } }
+    if (P.stunT > 0) { for (let i = 0; i < 3; i++) { const a = t * 5 + (i * TAU) / 3; star(g, Math.cos(a) * 17, -74 + bob + Math.sin(a) * 3, 4.4, a, '#ffe14d', 1.4); } }
   }
 
   // ---------- 悪い人のまわりの暗いトーン(スクリーントーン風) ----------
@@ -477,7 +492,7 @@ const Art = (() => {
     const face = B.face >= 0 ? 1 : -1;
     const run = B.moving;
     const wt = B.walkT || 0;
-    const R = 34 * (B.size || 1);          // 頭の半径(作業員の 2.4 倍)
+    const R = 44 * (B.size || 1);          // 頭の半径(作業員の 2 倍以上)
     const bob = run ? -Math.abs(Math.sin(wt)) * 3 : -Math.sin(t * 1.8) * 1;
     const lvl = B.level || 0;
     // トーン(いびり中・怒り中は濃い)
@@ -542,7 +557,7 @@ const Art = (() => {
     else if (st === 'defeated') eyes = { mode: 'tear', mean: 0.1, size: R / 14, browUp: 2, lashes: true, bags: true };
     else {
       const look = B.look || { x: face * 0.6, y: 0.2 };
-      eyes = { mean: st === 'scold' || st === 'windup' ? 1 : 0.85, look, size: R / 14, lashes: true, bags: true, wrinkles: true, bloodshot: st === 'windup' || st === 'shout', vein: st === 'scold' || st === 'windup' || B.hitFlash > 0, smirk: st === 'seek' || st === 'enter' ? 1 : 0, browThick: 2.1 };
+      eyes = { mean: st === 'scold' || st === 'windup' ? 1 : 0.9, grin: true, look, size: R / 14, lashes: true, bags: true, wrinkles: true, bloodshot: st === 'windup' || st === 'shout', vein: st === 'scold' || st === 'windup' || B.hitFlash > 0, smirk: st === 'seek' || st === 'enter' ? 1 : 0, browThick: 2.1 };
     }
     eyes.t = t;
     drawHoodHead(g, { r: R, face, eyes, perm: true, mask: lvl >= 1 ? '#ffe4ec' : MASK, skin: '#f3cfae' });
@@ -556,7 +571,8 @@ const Art = (() => {
 
   // ---------- ふきだし ----------
   // style: 'talk' | 'whisper' | 'shout' | 'think'
-  function drawBubble(ctx, x, y, text, style, font, alpha) {
+  // box: {top, left, right} を渡すと、ふきだしがその範囲(画面内)に収まるようにずらす
+  function drawBubble(ctx, x, y, text, style, font, alpha, box) {
     ctx.save();
     ctx.globalAlpha = alpha == null ? 1 : alpha;
     ctx.font = font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -567,6 +583,10 @@ const Art = (() => {
     const lh = Math.round(parseFloat(px) * 1.3) || 16;
     const h = lh * lines.length + pad * 1.2;
     w += pad * 2.2;
+    if (box) {
+      if (y - h - 8 < box.top) y = box.top + h + 8;
+      x = clamp(x, box.left + w / 2 + 8, box.right - w / 2 - 8);
+    }
     const bx = x - w / 2; const by = y - h;
     ctx.lineJoin = 'round';
     if (style === 'shout') {

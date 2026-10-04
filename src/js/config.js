@@ -4,7 +4,7 @@
 const CONFIG = {
   tile: 40,
   // 画面の拡大率: 見える面積が targetArea 付近になるよう調整し、最低でも minW x minH は見えるようにする
-  view: { targetArea: 330000, minW: 520, minH: 330, maxDpr: 2, maxPixels: 4.5e6 },
+  view: { targetArea: 260000, minW: 460, minH: 300, maxDpr: 2, maxPixels: 4.5e6 },
 
   player: {
     r: 15, speed: 235, accel: 2600, maxHp: 100,

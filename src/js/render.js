@@ -188,7 +188,7 @@ const Render = (() => {
         for (let i = 0; i < 3; i++) { const a = p.t * 2 + (i * TAU) / 3; Art.star(ctx, Math.cos(a) * 30, -20 + Math.sin(a) * 10, 4, a, '#fff', 1.2); }
         ctx.restore();
         if (p.life < 6 && Math.floor(p.life * 6) % 2 === 0) { /* 点滅 */ } else {
-          ctx.font = `800 13px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText(H.short, p.x, p.y - 44 + bob); ctx.fillStyle = H.color; ctx.fillText(H.short, p.x, p.y - 44 + bob);
+          ctx.font = `800 18px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = OUT; ctx.strokeText(H.short, p.x, p.y - 48 + bob); ctx.fillStyle = H.color; ctx.fillText(H.short, p.x, p.y - 48 + bob);
         }
       });
     }
@@ -202,7 +202,7 @@ const Render = (() => {
       pushDraw(w.y, () => {
         ctx.save(); ctx.translate(w.x, w.y);
         // やさしい難易度: 悪い人のまわりに うすい紫のトーン
-        if (cue === 0 && w.kind !== 'good' && w.state !== 'bow') Art.drawTone(ctx, 26, 0.22 + Math.sin(t * 3 + w.seed) * 0.05, t);
+        if (cue === 0 && w.kind !== 'good' && w.state !== 'bow') Art.drawTone(ctx, 34, 0.22 + Math.sin(t * 3 + w.seed) * 0.05, t);
         if (w.hitT > 0.35) { ctx.filter = 'brightness(1.8)'; }
         const eyes = workerEyes(w);
         const pose = workerPose(w);
@@ -211,12 +211,12 @@ const Render = (() => {
         // 改心したての人は頭の上にキラキラ(叩かないで!)
         if (w.reformed && w.kind === 'good') {
           const k = clamp(w.relapseT / 6, 0, 1);
-          Art.star(ctx, 0, -66 + Math.sin(t * 4) * 2, 6, t * 2, k < 1 ? (Math.floor(t * 6) % 2 ? '#ffd24d' : '#ff9a5c') : '#ffd24d', 1.4);
-          if (k < 1) { ctx.font = `800 11px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = OUT; ctx.strokeText('…ムズムズ', 0, -78); ctx.fillStyle = '#ff9a5c'; ctx.fillText('…ムズムズ', 0, -78); }
+          Art.star(ctx, 0, -82 + Math.sin(t * 4) * 2, 8, t * 2, k < 1 ? (Math.floor(t * 6) % 2 ? '#ffd24d' : '#ff9a5c') : '#ffd24d', 1.4);
+          if (k < 1) { ctx.font = `800 15px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText('…ムズムズ', 0, -96); ctx.fillStyle = '#ff9a5c'; ctx.fillText('…ムズムズ', 0, -96); }
         }
         // サボりの Zzz / 泣いている人の涙 / 困っている人の「!」
-        if (w.state === 'slack' && w.pose !== 'phone') { ctx.font = `800 ${13 + Math.sin(t * 2 + w.seed) * 2}px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = OUT; const zy = -62 - ((t * 10 + w.seed * 7) % 16); ctx.strokeText('z', 12, zy); ctx.fillStyle = '#9ac4ff'; ctx.fillText('z', 12, zy); }
-        if (w.state === 'upset' || w.state === 'cry') { ctx.font = `800 20px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText(w.state === 'cry' ? '…' : '!', 14, -60); ctx.fillStyle = w.state === 'cry' ? '#9ac4ff' : '#ff7a3d'; ctx.fillText(w.state === 'cry' ? '…' : '!', 14, -60); }
+        if (w.state === 'slack' && w.pose !== 'phone') { ctx.font = `800 ${18 + Math.sin(t * 2 + w.seed) * 2}px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; const zy = -76 - ((t * 10 + w.seed * 7) % 18); ctx.strokeText('z', 18, zy); ctx.fillStyle = '#9ac4ff'; ctx.fillText('z', 18, zy); }
+        if (w.state === 'upset' || w.state === 'cry') { ctx.font = `800 28px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = OUT; ctx.strokeText(w.state === 'cry' ? '…' : '!', 20, -74); ctx.fillStyle = w.state === 'cry' ? '#9ac4ff' : '#ff7a3d'; ctx.fillText(w.state === 'cry' ? '…' : '!', 20, -74); }
         ctx.restore();
       });
     }
@@ -230,7 +230,7 @@ const Render = (() => {
       ctx.filter = 'none';
       ctx.restore();
       // 名前
-      ctx.font = `800 13px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText(B.name, B.x, B.y - 128); ctx.fillStyle = B.state === 'defeated' ? '#9ac4ff' : '#ff8ad0'; ctx.fillText(B.name, B.x, B.y - 128);
+      ctx.font = `800 18px ${FONT}`; ctx.textAlign = 'center'; ctx.lineWidth = 5; ctx.strokeStyle = OUT; ctx.strokeText(B.name, B.x, B.y - 150); ctx.fillStyle = B.state === 'defeated' ? '#9ac4ff' : '#ff8ad0'; ctx.fillText(B.name, B.x, B.y - 150);
     });
   }
   function drawPlayerEntity(ctx, t) {
@@ -329,22 +329,25 @@ const Render = (() => {
       const sc = k < 0.15 ? 0.6 + (k / 0.15) * 0.6 : k > 0.75 ? 1.2 - ((k - 0.75) / 0.25) * 0.3 : 1.2;
       ctx.save(); ctx.translate(t.x, t.y); ctx.scale(sc, sc); ctx.rotate((t.vx || 0) * 0.01);
       ctx.globalAlpha = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1;
-      ctx.font = `800 ${t.size}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.lineWidth = Math.max(4, t.size * 0.22); ctx.strokeStyle = OUT; ctx.lineJoin = 'round'; ctx.strokeText(t.text, 0, 0);
+      const fs = Math.round(t.size * 1.3);
+      ctx.font = `800 ${fs}px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineWidth = Math.max(5, fs * 0.22); ctx.strokeStyle = OUT; ctx.lineJoin = 'round'; ctx.strokeText(t.text, 0, 0);
       ctx.fillStyle = t.color; ctx.fillText(t.text, 0, 0);
       ctx.restore();
     }
   }
   function drawBubbles(ctx, left, top, right, bottom) {
-    const font = `800 13px ${FONT}`;
+    const font = `800 18px ${FONT}`;
+    // 上の HUD(タイマー・ゲージ)の下から、左右の端まで
+    const box = { top: top + 160 / G.view.zoom, left, right };
     for (const w of G.workers) {
       if (!w.speech || w.x < left - 150 || w.x > right + 150 || w.y < top - 100 || w.y > bottom + 60) continue;
       const s = w.speech;
       const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1;
-      Art.drawBubble(ctx, w.x, w.y - 72, s.text, s.style, font, a);
+      Art.drawBubble(ctx, w.x, w.y - 86, s.text, s.style, font, a, box);
     }
     const B = G.boss;
-    if (B && B.speech) { const s = B.speech; const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1; Art.drawBubble(ctx, B.x, B.y - 140, s.text, s.style, `800 16px ${FONT}`, a); }
+    if (B && B.speech) { const s = B.speech; const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1; Art.drawBubble(ctx, B.x, B.y - 168, s.text, s.style, `800 22px ${FONT}`, a, box); }
   }
 
   // ---------- 1フレーム描く ----------

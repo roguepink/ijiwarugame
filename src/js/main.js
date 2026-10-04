@@ -20,6 +20,7 @@ const UI = {
     t.classList.remove('hidden');
     t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';
     clearTimeout(this.toastTimer);
+    if (this.el.hint) this.el.hint.classList.add('hidden');
     this.toastTimer = setTimeout(() => t.classList.add('hidden'), ms || 2600);
   },
   banner(text) {
@@ -27,7 +28,7 @@ const UI = {
     b.textContent = text;
     b.classList.remove('hidden');
     b.style.animation = 'none'; void b.offsetWidth; b.style.animation = '';
-    setTimeout(() => b.classList.add('hidden'), 1500);
+    setTimeout(() => b.classList.add('hidden'), 1300);
   },
   set(key, val, fn) { if (this.last[key] === val) return; this.last[key] = val; fn(val); },
   updateHud() {
@@ -88,7 +89,7 @@ function startGame(stage) {
   UI.banner('ステージ' + (G.stage + 1) + ' ' + CONFIG.stages[G.stage].name);
   UI.show('hint', true);
   clearTimeout(G.hintTimer);
-  G.hintTimer = setTimeout(() => UI.show('hint', false), 9000);
+  G.hintTimer = setTimeout(() => UI.show('hint', false), 7000);
   for (const id of ['thL', 'thR']) UI.el[id].classList.remove('gone');
   UI.el.touchHints.classList.add('show');
   clearTimeout(G.thTimer);
@@ -213,7 +214,7 @@ function updateCamera(dt) {
     // タイトルでは工場をゆっくり見まわす
     tx = W.W / 2 + Math.sin(G.clock * 0.12) * (W.W * 0.3); ty = W.H / 2 + Math.cos(G.clock * 0.09) * (W.H * 0.25);
   } else {
-    tx = P.x + Math.cos(P.aim) * 24; ty = P.y - 30 + Math.sin(P.aim) * 16;
+    tx = P.x + Math.cos(P.aim) * 24; ty = P.y - 46 + Math.sin(P.aim) * 16;
     if (G.boss && G.bossIntro > 0) { const k = clamp(G.bossIntro / 2.6, 0, 1); tx = lerp(tx, G.boss.x, k); ty = lerp(ty, G.boss.y, k); }
   }
   const k = 1 - Math.exp(-(G.state === 'title' ? 1.5 : 7) * dt);
@@ -266,14 +267,14 @@ function drawLegendPics() {
   const draw = (id, fn) => { const c = $(id); if (!c) return; const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.scale(c.width / 100, c.height / 100); fn(g); };
   // 目元くらべ
   draw('eyeGood', (g) => { g.translate(50, 54); g.scale(2.6, 2.6); Art.drawHoodHead(g, { r: 14, face: 1, eyes: { mean: 0, look: { x: 0, y: 0.2 } }, blush: true }); });
-  draw('eyeBad', (g) => { g.translate(50, 54); g.scale(2.6, 2.6); Art.drawHoodHead(g, { r: 14, face: 1, eyes: { mean: 0.9, look: { x: 0.6, y: 0.1 }, smirk: 1 } }); });
-  draw('eyeBoss', (g) => { g.translate(50, 56); g.scale(1.3, 1.3); Art.drawTone(g, 30, 0.5, 0); Art.drawHoodHead(g, { r: 30, face: 1, perm: true, mask: '#ffe4ec', skin: '#f3cfae', eyes: { mean: 1, look: { x: 0.5, y: 0.2 }, size: 2.1, lashes: true, bags: true, wrinkles: true, browThick: 2.1 } }); });
-  const fake = (kind, pose, extra) => ({ face: 1, walkT: 0, moving: false, pose, t: 0.5, eyes: Object.assign({ mean: kind === 'good' ? 0 : 0.9 }, extra || {}), blush: kind === 'good', badge: '#4fa4e8', veg: 'hakusai', workKind: 'chop' });
-  draw('ic-good', (g) => { g.translate(50, 86); g.scale(1.45, 1.45); Art.drawWorker(g, fake('good', 'work')); });
-  draw('ic-slacker', (g) => { g.translate(50, 86); g.scale(1.45, 1.45); Art.drawWorker(g, fake('slacker', 'phone', { droop: 0.6, look: { x: 0, y: 0.9 } })); });
-  draw('ic-gossip', (g) => { g.translate(36, 86); g.scale(1.3, 1.3); Art.drawWorker(g, fake('gossip', 'gossip', { smirk: 1, look: { x: 0.9, y: 0.1 } })); g.translate(26, 0); g.scale(-1, 1); Art.drawWorker(g, fake('gossip', 'gossip', { smirk: 1, look: { x: 0.9, y: 0.1 } })); });
-  draw('ic-sabo', (g) => { g.translate(50, 86); g.scale(1.45, 1.45); Art.drawWorker(g, fake('sabo', 'bother', { vein: true, look: { x: 1, y: 0 } })); });
-  draw('ic-boss', (g) => { g.translate(50, 92); g.scale(0.72, 0.72); Art.drawBoss(g, { face: 1, state: 'seek', moving: false, walkT: 0, level: 1, look: { x: 0.6, y: 0.2 }, hitFlash: 0 }, 0.3); });
+  draw('eyeBad', (g) => { g.translate(50, 54); g.scale(2.6, 2.6); Art.drawHoodHead(g, { r: 14, face: 1, eyes: { mean: 1, grin: true, look: { x: 0.6, y: 0.1 }, smirk: 1, vein: true } }); });
+  draw('eyeBoss', (g) => { g.translate(50, 56); g.scale(1.3, 1.3); Art.drawTone(g, 30, 0.5, 0); Art.drawHoodHead(g, { r: 30, face: 1, perm: true, mask: '#ffe4ec', skin: '#f3cfae', eyes: { mean: 1, grin: true, look: { x: 0.5, y: 0.2 }, size: 2.1, lashes: true, bags: true, wrinkles: true, browThick: 2.1 } }); });
+  const fake = (kind, pose, extra) => ({ face: 1, walkT: 0, moving: false, pose, t: 0.5, eyes: Object.assign({ mean: kind === 'good' ? 0 : 1, grin: kind !== 'good' }, extra || {}), blush: kind === 'good', badge: '#4fa4e8', veg: 'hakusai', workKind: 'chop' });
+  draw('ic-good', (g) => { g.translate(50, 92); g.scale(1.2, 1.2); Art.drawWorker(g, fake('good', 'work')); });
+  draw('ic-slacker', (g) => { g.translate(50, 92); g.scale(1.2, 1.2); Art.drawWorker(g, fake('slacker', 'phone', { droop: 0.6, look: { x: 0, y: 0.9 } })); });
+  draw('ic-gossip', (g) => { g.translate(32, 92); g.scale(1.05, 1.05); Art.drawWorker(g, fake('gossip', 'gossip', { smirk: 1, look: { x: 0.9, y: 0.1 } })); g.translate(34, 0); g.scale(-1, 1); Art.drawWorker(g, fake('gossip', 'gossip', { smirk: 1, look: { x: 0.9, y: 0.1 } })); });
+  draw('ic-sabo', (g) => { g.translate(46, 92); g.scale(1.2, 1.2); Art.drawWorker(g, fake('sabo', 'bother', { vein: true, look: { x: 1, y: 0 } })); });
+  draw('ic-boss', (g) => { g.translate(50, 96); g.scale(0.6, 0.6); Art.drawBoss(g, { face: 1, state: 'seek', moving: false, walkT: 0, level: 1, look: { x: 0.6, y: 0.2 }, hitFlash: 0 }, 0.3); });
   draw('ic-harisen', (g) => { g.translate(16, 60); g.rotate(-0.45); Art.drawHarisen(g, 'normal', 0.9); g.translate(0, 26); Art.drawHarisen(g, 'jumbo', 0.72); g.translate(0, 26); Art.drawHarisen(g, 'spark', 0.9); });
 }
 

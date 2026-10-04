@@ -1,5 +1,5 @@
 // オフライン用のキャッシュ: ゲーム本体とアイコンを先にためておき、index.html は新しいものがあれば取りにいく
-const VER = 'harisen-v1';
+const VER = 'harisen-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VER).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
