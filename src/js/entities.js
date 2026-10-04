@@ -98,7 +98,7 @@ let nextId = 1;
 function makeWorker(kind, x, y) {
   const W = CONFIG.worker;
   const hpBase = W.hp[kind] || 0;
-  const hp = kind === 'good' ? 0 : Math.max(2, Math.round(hpBase * G.diff.hpMul));
+  const hp = kind === 'good' ? 0 : Math.max(2, Math.round(hpBase * G.diff.hpMul * stageHpMul()));
   return { id: nextId++, x, y, r: W.r, vx: 0, vy: 0, face: Math.random() < 0.5 ? 1 : -1, walkT: 0, moving: false, kind, origKind: kind, hp, maxHp: hp, state: 'idle', st: 0, station: null, spot: null, partner: null, target: null, path: null, pathI: 0, speech: null, talkT: rr(0.5, 3), hitT: 0, kbx: 0, kby: 0, reformed: false, relapseT: 0, pretendT: 0, retaliateCd: 0, veg: 'cabbage', workKind: Math.random() < 0.6 ? 'chop' : 'box', badge: rpick(['#4fa4e8', '#ffb347', '#8fd37a', '#f58fb0']), wanderT: rr(25, 60), seed: Math.random() * 100 };
 }
 function freeStation(x, y, exclude) {
@@ -112,8 +112,17 @@ function freeStation(x, y, exclude) {
 }
 function takeStation(w, s) {
   if (w.station) w.station.busy = null;
-  w.station = s; s.busy = w; w.veg = s.veg;
+  w.station = s; s.busy = w; w.veg = s.veg === 'mix' ? (Math.random() < 0.5 ? 'cabbage' : 'hakusai') : s.veg;
+  if (s.kind === 'pack') w.workKind = 'box';
 }
+// 作業台の前に立ったときの向き: 縦のラインは台の方を見る。横のラインは左右どちらでも
+function faceStation(w) {
+  const s = w.station;
+  if (s && s.vertical) w.face = s.side < 0 ? 1 : -1;
+  else w.face = Math.random() < 0.5 ? 1 : -1;
+}
+// ステージが進むほど 悪い人は打たれ強い
+const stageHpMul = () => (CONFIG.stages[G.stage] && CONFIG.stages[G.stage].hpMul) || 1;
 function spawnWorkers() {
   const stg = CONFIG.stages[G.stage];
   const W = G.world;
@@ -126,7 +135,7 @@ function spawnWorkers() {
   for (let i = 0; i < stg.good && si < stations.length; i++) {
     const s = stations[si++];
     const w = makeWorker('good', s.sx, s.sy);
-    takeStation(w, s); w.state = 'work'; w.face = rnd() < 0.5 ? 1 : -1;
+    takeStation(w, s); w.state = 'work'; faceStation(w);
     workers.push(w);
   }
   const extra = G.diff.badExtra;
@@ -223,7 +232,7 @@ function reform(w) {
 function relapse(w) {
   w.kind = w.origKind === 'minion' ? 'sabo' : w.origKind;
   w.reformed = false;
-  w.hp = w.maxHp = Math.max(2, Math.round((CONFIG.worker.hp[w.kind] || 4) * G.diff.hpMul));
+  w.hp = w.maxHp = Math.max(2, Math.round((CONFIG.worker.hp[w.kind] || 4) * G.diff.hpMul * stageHpMul()));
   G.stats.relapses++;
   say(w, rpick(LINES.relapse), 'think', 1.8);
   Sound.sfx.relapse();
@@ -273,7 +282,7 @@ function updateWorker(w, dt) {
     case 'cry': if (w.st <= 0) { setState(w, w.station ? 'work' : 'idle'); if (!w.station) goWork(w); } break;
     case 'walk': {
       if (followPath(w, W.speed, dt)) {
-        if (w.kind === 'good') { if (w.station) { setState(w, 'work'); w.face = Math.random() < 0.5 ? 1 : -1; } else goWork(w); }
+        if (w.kind === 'good') { if (w.station) { setState(w, 'work'); faceStation(w); } else goWork(w); }
         else if (w.kind === 'sabo' || w.kind === 'minion') {
           if (w.target && w.target.kind === 'good' && dist(w.x, w.y, w.target.x, w.target.y) < 60) { setState(w, 'bother', 2.4); w.face = w.target.x > w.x ? 1 : -1; w.target.victimT = 4; say(w, rpick(w.kind === 'minion' ? LINES.minion : LINES.sabo), 'talk', 2); }
           else setState(w, 'idle', rr(0.5, 1.5));
@@ -744,7 +753,8 @@ function resetGame() {
   G.boss = null;
   G.pickups = []; G.projectiles = []; G.particles = []; G.texts = []; G.swings = []; G.impacts = []; G.zaps = []; G.rings = [];
   G.score = 0; G.combo = 0; G.comboT = 0; G.comboMult = 1;
-  G.timeLeft = G.diff.time;
+  G.timeLeft = G.diff.time + (CONFIG.stages[G.stage].timeAdd || 0);
+  G.timeTotal = G.timeLeft;
   G.gauge = 0; G.gaugeNeed = G.diff.needReform[G.stage];
   G.phase = 'hunt'; G.bossIntro = 0; G.wonT = 0;
   G.pickupT = CONFIG.pickup.first;

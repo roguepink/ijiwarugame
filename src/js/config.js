@@ -42,19 +42,23 @@ const CONFIG = {
 
   // 難易度。cue: 悪い人のヒントの強さ(0: オーラ+目+行動 / 1: 目+行動、近づくとふりをする / 2: 目が細かい、ふりが上手い)
   diff: {
-    easy:   { name: 'やさしい', time: 210, hpMul: 0.8,  relapse: 48, cue: 0, bossHpMul: 0.75, retaliate: 0.08, needReform: [4, 5, 6],  badExtra: -1 },
-    normal: { name: 'ふつう',   time: 180, hpMul: 1,    relapse: 34, cue: 1, bossHpMul: 1,    retaliate: 0.2, needReform: [5, 6, 8],  badExtra: 0 },
-    hard:   { name: 'むずかしい', time: 165, hpMul: 1.3, relapse: 24, cue: 2, bossHpMul: 1.3,  retaliate: 0.35, needReform: [6, 8, 10], badExtra: 1 },
+    easy:   { name: 'やさしい', time: 210, hpMul: 0.8,  relapse: 48, cue: 0, bossHpMul: 0.75, retaliate: 0.08, needReform: [4, 6, 8],   badExtra: -1 },
+    normal: { name: 'ふつう',   time: 180, hpMul: 1,    relapse: 34, cue: 1, bossHpMul: 1,    retaliate: 0.2, needReform: [5, 8, 11],  badExtra: 0 },
+    hard:   { name: 'むずかしい', time: 165, hpMul: 1.3, relapse: 24, cue: 2, bossHpMul: 1.3,  retaliate: 0.35, needReform: [6, 10, 13], badExtra: 1 },
   },
 
-  // ステージ。lines: ラインの本数 / good: まじめな人の数 / bad: 悪い人の内訳(gossip はペア数)
+  // ステージ。layout: マップの並び方 / good: まじめな人の数 / bad: 悪い人の内訳(gossip はペア数)
+  // timeAdd: 難易度の制限時間に足す秒数 / hpMul: 悪い人の打たれ強さ / theme: 床・壁・ラインの色
   stages: [
-    { name: '白菜ライン', veg: 'hakusai', lines: 3, W: 2400, good: 10, bad: { slacker: 3, gossip: 1, sabo: 1 }, boxes: 12, relapseMul: 1,
+    { name: '白菜ライン', layout: 'rows', veg: 'hakusai', lines: 3, W: 2400, H: 1500, good: 10, bad: { slacker: 3, gossip: 1, sabo: 1 }, boxes: 12, relapseMul: 1, timeAdd: 0, hpMul: 1,
+      theme: { floorA: '#eef1f6', floorB: '#e6eaf1', grout: 'rgba(150,165,190,0.5)', tile: 80, outside: '#9fb0c8', wall: '#b9c6d8', wallLight: '#d6dfeb', frame: '#8e9bb0', lane: 'rgba(255,200,40,0.55)', sign: '#2a7ad0', lineSign: '#2f6fb8', mini: '#eef1f6' },
       boss: { name: 'イジワルおばさん', hp: 48, speed: 100, throw: false, minions: 0, title: 'ラインの お局' } },
-    { name: 'キャベツライン', veg: 'cabbage', lines: 4, W: 2500, good: 12, bad: { slacker: 3, gossip: 2, sabo: 2 }, boxes: 18, relapseMul: 0.8,
-      boss: { name: 'ドイジワルおばさん', hp: 70, speed: 110, throw: true, minions: 0, title: 'キャベツを なげる' } },
-    { name: '出荷フロア', veg: 'mix', lines: 4, W: 2700, good: 14, bad: { slacker: 4, gossip: 2, sabo: 3 }, boxes: 24, relapseMul: 0.65,
-      boss: { name: '大イジワルおばさま', hp: 95, speed: 118, throw: true, minions: 2, title: '工場の ラスボス' } },
+    { name: 'キャベツライン', layout: 'columns', veg: 'cabbage', lines: 6, W: 2800, H: 2050, good: 16, bad: { slacker: 4, gossip: 2, sabo: 3 }, boxes: 16, relapseMul: 0.8, timeAdd: 25, hpMul: 1.15,
+      theme: { floorA: '#e2f3e6', floorB: '#d5ecda', grout: 'rgba(110,170,130,0.55)', tile: 60, outside: '#7fae8c', wall: '#8fc29e', wallLight: '#b9dfc3', frame: '#5f9a72', lane: 'rgba(255,255,255,0.85)', sign: '#2f8a4f', lineSign: '#3a9a5a', mini: '#e2f3e6' },
+      boss: { name: 'ドイジワルおばさん', hp: 70, speed: 112, throw: true, minions: 0, title: 'キャベツを なげる' } },
+    { name: '出荷フロア', layout: 'warehouse', veg: 'mix', lines: 3, W: 3000, H: 2200, good: 22, bad: { slacker: 5, gossip: 3, sabo: 4 }, boxes: 14, relapseMul: 0.65, timeAdd: 50, hpMul: 1.3,
+      theme: { floorA: '#e6dfd2', floorB: '#ddd4c4', grout: 'rgba(150,135,110,0.35)', tile: 0, outside: '#a8977c', wall: '#c99a5e', wallLight: '#e2bd8a', frame: '#8a6a44', lane: 'rgba(255,190,20,0.8)', sign: '#b5541f', lineSign: '#c0662a', mini: '#e6dfd2' },
+      boss: { name: '大イジワルおばさま', hp: 95, speed: 120, throw: true, minions: 3, title: '工場の ラスボス' } },
   ],
 };
 

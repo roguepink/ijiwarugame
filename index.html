@@ -542,19 +542,23 @@ const CONFIG = {
 
   // 難易度。cue: 悪い人のヒントの強さ(0: オーラ+目+行動 / 1: 目+行動、近づくとふりをする / 2: 目が細かい、ふりが上手い)
   diff: {
-    easy:   { name: 'やさしい', time: 210, hpMul: 0.8,  relapse: 48, cue: 0, bossHpMul: 0.75, retaliate: 0.08, needReform: [4, 5, 6],  badExtra: -1 },
-    normal: { name: 'ふつう',   time: 180, hpMul: 1,    relapse: 34, cue: 1, bossHpMul: 1,    retaliate: 0.2, needReform: [5, 6, 8],  badExtra: 0 },
-    hard:   { name: 'むずかしい', time: 165, hpMul: 1.3, relapse: 24, cue: 2, bossHpMul: 1.3,  retaliate: 0.35, needReform: [6, 8, 10], badExtra: 1 },
+    easy:   { name: 'やさしい', time: 210, hpMul: 0.8,  relapse: 48, cue: 0, bossHpMul: 0.75, retaliate: 0.08, needReform: [4, 6, 8],   badExtra: -1 },
+    normal: { name: 'ふつう',   time: 180, hpMul: 1,    relapse: 34, cue: 1, bossHpMul: 1,    retaliate: 0.2, needReform: [5, 8, 11],  badExtra: 0 },
+    hard:   { name: 'むずかしい', time: 165, hpMul: 1.3, relapse: 24, cue: 2, bossHpMul: 1.3,  retaliate: 0.35, needReform: [6, 10, 13], badExtra: 1 },
   },
 
-  // ステージ。lines: ラインの本数 / good: まじめな人の数 / bad: 悪い人の内訳(gossip はペア数)
+  // ステージ。layout: マップの並び方 / good: まじめな人の数 / bad: 悪い人の内訳(gossip はペア数)
+  // timeAdd: 難易度の制限時間に足す秒数 / hpMul: 悪い人の打たれ強さ / theme: 床・壁・ラインの色
   stages: [
-    { name: '白菜ライン', veg: 'hakusai', lines: 3, W: 2400, good: 10, bad: { slacker: 3, gossip: 1, sabo: 1 }, boxes: 12, relapseMul: 1,
+    { name: '白菜ライン', layout: 'rows', veg: 'hakusai', lines: 3, W: 2400, H: 1500, good: 10, bad: { slacker: 3, gossip: 1, sabo: 1 }, boxes: 12, relapseMul: 1, timeAdd: 0, hpMul: 1,
+      theme: { floorA: '#eef1f6', floorB: '#e6eaf1', grout: 'rgba(150,165,190,0.5)', tile: 80, outside: '#9fb0c8', wall: '#b9c6d8', wallLight: '#d6dfeb', frame: '#8e9bb0', lane: 'rgba(255,200,40,0.55)', sign: '#2a7ad0', lineSign: '#2f6fb8', mini: '#eef1f6' },
       boss: { name: 'イジワルおばさん', hp: 48, speed: 100, throw: false, minions: 0, title: 'ラインの お局' } },
-    { name: 'キャベツライン', veg: 'cabbage', lines: 4, W: 2500, good: 12, bad: { slacker: 3, gossip: 2, sabo: 2 }, boxes: 18, relapseMul: 0.8,
-      boss: { name: 'ドイジワルおばさん', hp: 70, speed: 110, throw: true, minions: 0, title: 'キャベツを なげる' } },
-    { name: '出荷フロア', veg: 'mix', lines: 4, W: 2700, good: 14, bad: { slacker: 4, gossip: 2, sabo: 3 }, boxes: 24, relapseMul: 0.65,
-      boss: { name: '大イジワルおばさま', hp: 95, speed: 118, throw: true, minions: 2, title: '工場の ラスボス' } },
+    { name: 'キャベツライン', layout: 'columns', veg: 'cabbage', lines: 6, W: 2800, H: 2050, good: 16, bad: { slacker: 4, gossip: 2, sabo: 3 }, boxes: 16, relapseMul: 0.8, timeAdd: 25, hpMul: 1.15,
+      theme: { floorA: '#e2f3e6', floorB: '#d5ecda', grout: 'rgba(110,170,130,0.55)', tile: 60, outside: '#7fae8c', wall: '#8fc29e', wallLight: '#b9dfc3', frame: '#5f9a72', lane: 'rgba(255,255,255,0.85)', sign: '#2f8a4f', lineSign: '#3a9a5a', mini: '#e2f3e6' },
+      boss: { name: 'ドイジワルおばさん', hp: 70, speed: 112, throw: true, minions: 0, title: 'キャベツを なげる' } },
+    { name: '出荷フロア', layout: 'warehouse', veg: 'mix', lines: 3, W: 3000, H: 2200, good: 22, bad: { slacker: 5, gossip: 3, sabo: 4 }, boxes: 14, relapseMul: 0.65, timeAdd: 50, hpMul: 1.3,
+      theme: { floorA: '#e6dfd2', floorB: '#ddd4c4', grout: 'rgba(150,135,110,0.35)', tile: 0, outside: '#a8977c', wall: '#c99a5e', wallLight: '#e2bd8a', frame: '#8a6a44', lane: 'rgba(255,190,20,0.8)', sign: '#b5541f', lineSign: '#c0662a', mini: '#e6dfd2' },
+      boss: { name: '大イジワルおばさま', hp: 95, speed: 120, throw: true, minions: 3, title: '工場の ラスボス' } },
   ],
 };
 
@@ -563,138 +567,228 @@ const G = {};
 
 /* ---- js/world.js ---- */
 'use strict';
-/* 工場のマップを作る。ベルトコンベア(ライン)が横に何本も走り、通路でぐるぐる回れる。
+/* 工場のマップを作る。ステージごとに まったく違う並び方にする:
+     1 白菜ライン   : 横に流れるベルトが何本も(白とブルーグレーの衛生的なタイル)
+     2 キャベツライン: 洗浄タンクから縦に流れるベルトが6本(ミントグリーンの床・水色の水槽・緑のコンテナ)
+     3 出荷フロア   : コの字の長いコンベア・箱詰め台・背の高い棚・出荷口のシャッター(コンクリートの床・黄色い通路)
    すべて矩形の障害物(rects)で表し、歩ける場所は起動時に塗りつぶしで求める */
+
+const WALL = 40;
 
 function buildWorld(stageNo, seed) {
   const st = CONFIG.stages[stageNo];
   const rnd = mulberry32((seed || 1) + stageNo * 977);
-  const T = CONFIG.tile;
-  const W = st.W;
-  const H = st.lines * 360 + 420;
-  const rects = [];        // 障害物 {x,y,w,h,type}
-  const belts = [];        // ベルトの描画用 {x,y,w,h,line}
-  const stations = [];     // 作業台 {x,y,w,h, sx,sy(立つ位置), side, line}
-  const spots = [];        // サボり場所 {x,y,kind:'lean'|'bench'|'corner', dir}
-  const gossipSpots = [];  // 悪口コンビの場所 {x,y}
-  const props = [];        // 飾り(当たりなし) {type,x,y,...}
-  const add = (x, y, w, h, type) => { const r = { x, y, w, h, type }; rects.push(r); return r; };
+  const L = { W: st.W, H: st.H, rects: [], belts: [], stations: [], spots: [], gossipSpots: [], props: [], rnd };
+  L.add = (x, y, w, h, type, extra) => { const r = Object.assign({ x, y, w, h, type }, extra || {}); L.rects.push(r); return r; };
+  // 外壁
+  L.add(0, 0, L.W, WALL, 'wall'); L.add(0, L.H - WALL, L.W, WALL, 'wall'); L.add(0, 0, WALL, L.H, 'wall'); L.add(L.W - WALL, 0, WALL, L.H, 'wall');
+  L.dock = { x: L.W / 2, y: WALL + 10, w: 220 }; // 搬入口(ボスが入ってくる)
+  L.start = { x: L.W / 2, y: L.H - 130 };
+  if (st.layout === 'columns') layoutColumns(L, st);
+  else if (st.layout === 'warehouse') layoutWarehouse(L, st);
+  else layoutRows(L, st);
+  if (!L.props.some((p) => p.type === 'door')) L.props.push({ type: 'door', x: L.dock.x, y: WALL, w: L.dock.w, label: '搬入口' });
+  L.props.push({ type: 'floorMark', x: L.start.x, y: L.H - 110, text: '入口' });
+  return finishWorld(L, st, stageNo);
+}
 
-  // 壁
-  const WALL = 40;
-  add(0, 0, W, WALL, 'wall'); add(0, H - WALL, W, WALL, 'wall'); add(0, 0, WALL, H, 'wall'); add(W - WALL, 0, WALL, H, 'wall');
-  const dock = { x: W / 2, y: WALL + 10, w: 220 }; // 搬入口(ボスが入ってくる)
-  props.push({ type: 'door', x: dock.x, y: WALL, w: dock.w });
-
-  // ライン
-  const LX0 = 330; const LX1 = W - 330;
+// 横のベルトの両側に作業台を並べる(すき間 gaps の前後はあける)
+function addHBelt(L, x0, x1, y, gaps, line, veg, kind) {
   const BH = 36; const TH = 30; const TW = 58; const GAPW = 124;
+  let x = x0;
+  for (const gx of gaps) {
+    if (gx - x > 30) { L.add(x, y - BH, gx - x, BH * 2, 'belt'); L.belts.push({ x, y: y - BH, w: gx - x, h: BH * 2, line, dir: 'h', veg }); }
+    x = gx + GAPW;
+  }
+  if (x1 - x > 30) { L.add(x, y - BH, x1 - x, BH * 2, 'belt'); L.belts.push({ x, y: y - BH, w: x1 - x, h: BH * 2, line, dir: 'h', veg }); }
+  for (let tx = x0 + 70; tx < x1 - 70 - TW; tx += 150) {
+    if (gaps.some((gx) => tx + TW > gx - 36 && tx < gx + GAPW + 36)) continue;
+    for (const side of [-1, 1]) {
+      const ty = side < 0 ? y - BH - TH : y + BH;
+      const s = { x: tx, y: ty, w: TW, h: TH, sx: tx + TW / 2, sy: side < 0 ? ty - 20 : ty + TH + 20, side, line, busy: null, veg, kind: kind || 'cut', vertical: false };
+      L.add(tx, ty, TW, TH, 'table', { station: s });
+      L.stations.push(s);
+    }
+  }
+}
+// 縦のベルト(上から下へ流れる)。作業台は左右に
+function addVBelt(L, x, y0, y1, gaps, line, veg, kind) {
+  const BW = 36; const TW = 30; const TH = 58; const GAPH = 124;
+  let y = y0;
+  for (const gy of gaps) {
+    if (gy - y > 30) { L.add(x - BW, y, BW * 2, gy - y, 'belt'); L.belts.push({ x: x - BW, y, w: BW * 2, h: gy - y, line, dir: 'v', veg }); }
+    y = gy + GAPH;
+  }
+  if (y1 - y > 30) { L.add(x - BW, y, BW * 2, y1 - y, 'belt'); L.belts.push({ x: x - BW, y, w: BW * 2, h: y1 - y, line, dir: 'v', veg }); }
+  for (let ty = y0 + 60; ty < y1 - 60 - TH; ty += 140) {
+    if (gaps.some((gy) => ty + TH > gy - 36 && ty < gy + GAPH + 36)) continue;
+    for (const side of [-1, 1]) {
+      const tx = side < 0 ? x - BW - TW : x + BW;
+      const s = { x: tx, y: ty, w: TW, h: TH, sx: side < 0 ? tx - 22 : tx + TW + 22, sy: ty + TH / 2 + 8, side, line, busy: null, veg, kind: kind || 'cut', vertical: true };
+      L.add(tx, ty, TW, TH, 'table', { station: s });
+      L.stations.push(s);
+    }
+  }
+}
+function restCorner(L, x, y) {
+  // 休憩コーナー: ロッカー・自販機・ベンチ
+  L.add(x, y, 46, 150, 'locker');
+  L.add(x + 70, y, 44, 70, 'vending');
+  L.add(x + 130, y, 44, 70, 'vending');
+  L.add(x + 200, y + 8, 90, 26, 'bench');
+  L.spots.push({ x: x + 245, y: y + 56, kind: 'bench', dir: 1 });
+  L.spots.push({ x: x + 92, y: y + 100, kind: 'lean', dir: 1 });
+  L.spots.push({ x: x + 88, y: y + 190, kind: 'corner', dir: 1 });
+}
+
+// ---------- ステージ1: 横のライン ----------
+function layoutRows(L, st) {
+  const { W, rnd } = L;
+  const LX0 = 330; const LX1 = W - 330;
   for (let i = 0; i < st.lines; i++) {
     const ly = 400 + i * 360;
-    // 通れるすき間を 2〜3 か所、前のラインとずらして置く
     const nGap = 2 + (i % 2);
     const gaps = [];
     for (let g = 0; g < nGap; g++) {
       const segW = (LX1 - LX0) / nGap;
-      const gx = LX0 + segW * g + segW * (0.25 + rnd() * 0.5) + (i % 2 ? 90 : -90);
-      gaps.push(clamp(gx, LX0 + 120, LX1 - 120 - GAPW));
+      gaps.push(clamp(LX0 + segW * g + segW * (0.25 + rnd() * 0.5) + (i % 2 ? 90 : -90), LX0 + 120, LX1 - 244));
     }
     gaps.sort((a, b) => a - b);
-    let x = LX0;
-    for (const gx of gaps) {
-      if (gx - x > 30) { add(x, ly - BH, gx - x, BH * 2, 'belt'); belts.push({ x, y: ly - BH, w: gx - x, h: BH * 2, line: i }); }
-      x = gx + GAPW;
-    }
-    add(x, ly - BH, LX1 - x, BH * 2, 'belt'); belts.push({ x, y: ly - BH, w: LX1 - x, h: BH * 2, line: i });
-    // 作業台(ベルトの両側)。すき間の前後には置かない
-    for (let tx = LX0 + 70; tx < LX1 - 70 - TW; tx += 150) {
-      const inGap = gaps.some((gx) => tx + TW > gx - 36 && tx < gx + GAPW + 36);
-      if (inGap) continue;
-      for (const side of [-1, 1]) {
-        const ty = side < 0 ? ly - BH - TH : ly + BH;
-        const r = add(tx, ty, TW, TH, 'table');
-        r.side = side; r.line = i;
-        stations.push({ x: tx, y: ty, w: TW, h: TH, sx: tx + TW / 2, sy: side < 0 ? ty - 20 : ty + TH + 20, side, line: i, busy: null, veg: st.veg === 'mix' ? (i % 2 ? 'cabbage' : 'hakusai') : st.veg });
-      }
-    }
-    props.push({ type: 'lineSign', x: LX0 - 60, y: ly, line: i, text: (st.veg === 'mix' ? (i % 2 ? 'キャベツ' : '白菜') : st.veg === 'cabbage' ? 'キャベツ' : '白菜') + ' ' + (i + 1) });
+    addHBelt(L, LX0, LX1, ly, gaps, i, st.veg, 'cut');
+    L.props.push({ type: 'lineSign', x: LX0 - 60, y: ly, text: '白菜 ' + (i + 1) });
   }
+  restCorner(L, WALL, WALL);
+  L.props.push({ type: 'sign', x: W / 2 - 300, y: WALL + 2, text: '衛生第一・手洗いうがい' });
+  L.props.push({ type: 'sign', x: W / 2 + 160, y: WALL + 2, text: 'おしゃべり禁止' });
+  L.add(W - WALL - 150, WALL, 150, 90, 'pallet');
+  L.spots.push({ x: W - WALL - 75, y: WALL + 118, kind: 'lean', dir: -1 });
+  L.spots.push({ x: WALL + 30, y: L.H / 2, kind: 'corner', dir: 1 });
+  L.spots.push({ x: W - WALL - 30, y: L.H / 2 + 60, kind: 'corner', dir: -1 });
+  L.gossipSpots.push({ x: W - WALL - 60, y: L.H - WALL - 70 }, { x: WALL + 70, y: L.H - WALL - 70 });
+}
 
-  // 休憩コーナー(左上): 自販機・ベンチ・ロッカー
-  add(WALL, WALL, 46, 150, 'locker');
-  add(WALL + 70, WALL, 44, 70, 'vending');
-  add(WALL + 130, WALL, 44, 70, 'vending');
-  add(WALL + 200, WALL + 8, 90, 26, 'bench');
-  spots.push({ x: WALL + 245, y: WALL + 56, kind: 'bench', dir: 1 });
-  spots.push({ x: WALL + 92, y: WALL + 100, kind: 'lean', dir: 1 });
-  spots.push({ x: WALL + 24 + 46 + 18, y: WALL + 190, kind: 'corner', dir: 1 });
-  props.push({ type: 'sign', x: W / 2 - 300, y: WALL + 2, text: '衛生第一・手洗いうがい' });
-  props.push({ type: 'sign', x: W / 2 + 160, y: WALL + 2, text: 'おしゃべり禁止' });
-  props.push({ type: 'floorMark', x: W / 2, y: H - 110, text: '入口' });
-  // 右上: パレット置き場 (段ボールのかたまり)
-  add(W - WALL - 150, WALL, 150, 90, 'pallet');
-  spots.push({ x: W - WALL - 75, y: WALL + 118, kind: 'lean', dir: -1 });
-  gossipSpots.push({ x: W - WALL - 60, y: H - WALL - 70 });
-  gossipSpots.push({ x: WALL + 70, y: H - WALL - 70 });
-  spots.push({ x: WALL + 30, y: H / 2, kind: 'corner', dir: 1 });
-  spots.push({ x: W - WALL - 30, y: H / 2 + 60, kind: 'corner', dir: -1 });
+// ---------- ステージ2: 洗浄タンクから縦に流れるキャベツ ----------
+function layoutColumns(L, st) {
+  const { W, H, rnd } = L;
+  const n = st.lines;
+  const xs = [];
+  for (let i = 0; i < n; i++) xs.push(Math.round(430 + i * ((W - 860) / (n - 1))));
+  const y0 = 330; const y1 = H - 430;
+  xs.forEach((x, i) => {
+    // 洗浄タンク(水にキャベツが浮かぶ)
+    L.add(x - 70, 150, 140, 100, 'tank', { line: i });
+    // すき間は列ごとにずらして、迷路のように
+    const span = y1 - y0;
+    const gaps = i % 2 ? [y0 + span * (0.22 + rnd() * 0.12), y0 + span * (0.66 + rnd() * 0.1)] : [y0 + span * (0.42 + rnd() * 0.12)];
+    addVBelt(L, x, y0, y1, gaps, i, 'cabbage', 'cut');
+    // 下で受けるコンテナ
+    L.add(x - 46, y1 + 26, 92, 54, 'bins', { n: 2 });
+    L.props.push({ type: 'lineSign', x, y: 300 - 40 - 10, text: 'キャベツ ' + (i + 1), small: true });
+  });
+  restCorner(L, WALL, H - WALL - 160);
+  L.props.push({ type: 'sign', x: W * 0.25, y: WALL + 2, text: '洗浄 → カット → 計量' });
+  L.props.push({ type: 'sign', x: W * 0.75, y: WALL + 2, text: '床がぬれています 注意' });
+  // すみっこ・タンクの陰がサボり場所
+  L.spots.push({ x: WALL + 40, y: 130, kind: 'corner', dir: 1 });
+  L.spots.push({ x: W - WALL - 40, y: 130, kind: 'corner', dir: -1 });
+  L.spots.push({ x: (xs[0] + xs[1]) / 2, y: 200, kind: 'lean', dir: 1 });
+  L.spots.push({ x: (xs[n - 2] + xs[n - 1]) / 2, y: 200, kind: 'lean', dir: -1 });
+  L.spots.push({ x: W - WALL - 40, y: H / 2, kind: 'corner', dir: -1 });
+  L.spots.push({ x: WALL + 40, y: H / 2 - 100, kind: 'corner', dir: 1 });
+  L.gossipSpots.push({ x: W - WALL - 70, y: H - WALL - 70 }, { x: (xs[2] + xs[3]) / 2, y: 200 }, { x: WALL + 360, y: H - WALL - 70 });
+}
 
-  // 段ボールの山(通路にランダム)。立つ場所やすき間をふさがないように置く
+// ---------- ステージ3: 出荷フロア(コの字のコンベア・棚・シャッター) ----------
+function layoutWarehouse(L, st) {
+  const { W, H } = L;
+  // 上の壁に出荷口のシャッターが3つ。まん中がボスの出入り口
+  L.dock = { x: W / 2, y: WALL + 10, w: 220 };
+  for (const [k, label] of [[0.2, '出荷口 1'], [0.5, '出荷口 2'], [0.8, '出荷口 3']]) L.props.push({ type: 'door', x: Math.round(W * k), y: WALL, w: 220, label, shutter: true });
+  // シャッター前の出荷待ちパレット
+  for (const k of [0.2, 0.8]) { L.add(Math.round(W * k) - 140, WALL + 60, 90, 80, 'wrap'); L.add(Math.round(W * k) + 50, WALL + 60, 90, 80, 'wrap'); }
+  // コの字のコンベア: 上の横 → 右の縦 → 下の横(右から左へ)
+  const yTop = 520; const yBot = 1440; const xR = W - 520; const xL0 = 380;
+  addHBelt(L, xL0, xR - 60, yTop, [xL0 + 520, xL0 + 1300], 0, 'mix', 'pack');
+  addVBelt(L, xR, yTop + 36, yBot - 36, [yTop + 380], 1, 'mix', 'pack');
+  addHBelt(L, xL0 + 300, xR - 60, yBot, [xL0 + 760, xL0 + 1500], 2, 'mix', 'pack');
+  L.add(xR - 60, yTop - 36, 96, 72, 'belt'); L.belts.push({ x: xR - 60, y: yTop - 36, w: 96, h: 72, line: 9, dir: 'corner', veg: 'mix' });
+  L.add(xR - 60, yBot - 36, 96, 72, 'belt'); L.belts.push({ x: xR - 60, y: yBot - 36, w: 96, h: 72, line: 9, dir: 'corner', veg: 'mix' });
+  L.props.push({ type: 'lineSign', x: xL0 - 60, y: yTop, text: '箱詰め A' });
+  L.props.push({ type: 'lineSign', x: xL0 + 240, y: yBot, text: '箱詰め B' });
+  // 左下と右に、背の高い棚(列のあいだは かくれ場所)
+  for (const y of [1660, 1800, 1940]) { L.add(120, y, 360, 44, 'rack'); L.add(560, y, 360, 44, 'rack'); }
+  for (const y of [700, 900, 1100]) L.add(W - WALL - 220, y, 200, 44, 'rack');
+  // 中央の島: 手作業の箱詰め台
+  for (let i = 0; i < 3; i++) {
+    const cx = 760 + i * 340; const cy = 980;
+    const s1 = { x: cx - 50, y: cy - 22, w: 100, h: 44, sx: cx, sy: cy - 50, side: -1, line: 5, busy: null, veg: i % 2 ? 'cabbage' : 'hakusai', kind: 'pack', vertical: false };
+    const s2 = Object.assign({}, s1, { sy: cy + 50, side: 1 });
+    L.add(cx - 50, cy - 22, 100, 44, 'packIsland', { station: s1 });
+    L.stations.push(s1, s2);
+  }
+  restCorner(L, W - WALL - 300, H - WALL - 170);
+  L.props.push({ type: 'sign', x: W * 0.35, y: WALL + 2, text: 'フォークリフト 注意' });
+  L.props.push({ type: 'sign', x: W * 0.65, y: WALL + 2, text: '出荷時間を 守ろう' });
+  L.spots.push({ x: 300, y: 1740, kind: 'lean', dir: 1 }, { x: 740, y: 1880, kind: 'lean', dir: -1 }, { x: 300, y: 2020, kind: 'corner', dir: 1 });
+  L.spots.push({ x: W - WALL - 120, y: 800, kind: 'lean', dir: -1 }, { x: W - WALL - 120, y: 1000, kind: 'corner', dir: -1 });
+  L.spots.push({ x: WALL + 40, y: 300, kind: 'corner', dir: 1 });
+  L.gossipSpots.push({ x: 520, y: 1880 }, { x: W - WALL - 120, y: 1200 }, { x: WALL + 80, y: 1200 }, { x: W * 0.35, y: WALL + 130 });
+}
+
+// 段ボールなどを散らし、歩ける場所を求め、立ち位置を歩けるセルに寄せる
+function finishWorld(L, st, stageNo) {
+  const { W, H, rects, stations, spots, gossipSpots, rnd } = L;
+  const T = CONFIG.tile;
   const keepClear = [];
   for (const s of stations) keepClear.push({ x: s.sx - 26, y: s.sy - 26, w: 52, h: 52 });
   for (const s of spots.concat(gossipSpots)) keepClear.push({ x: s.x - 40, y: s.y - 40, w: 80, h: 80 });
-  keepClear.push({ x: W / 2 - 160, y: H - 220, w: 320, h: 200 }); // スタート地点
-  keepClear.push({ x: dock.x - dock.w / 2 - 40, y: 0, w: dock.w + 80, h: 220 }); // 搬入口
+  keepClear.push({ x: L.start.x - 160, y: H - 220, w: 320, h: 200 });
+  keepClear.push({ x: L.dock.x - L.dock.w / 2 - 40, y: 0, w: L.dock.w + 80, h: 220 });
+  const boxType = st.layout === 'columns' ? 'bins' : st.layout === 'warehouse' ? 'wrap' : 'boxes';
   const boxes = [];
   let tries = 0;
-  while (boxes.length < st.boxes && tries++ < 400) {
-    const w = 50 + Math.floor(rnd() * 3) * 22; const h = 44 + Math.floor(rnd() * 2) * 22;
+  while (boxes.length < st.boxes && tries++ < 500) {
+    const w = boxType === 'wrap' ? 90 : 50 + Math.floor(rnd() * 3) * 22; const h = boxType === 'wrap' ? 80 : 44 + Math.floor(rnd() * 2) * 22;
     const x = WALL + 60 + rnd() * (W - WALL * 2 - 120 - w);
     const y = WALL + 60 + rnd() * (H - WALL * 2 - 120 - h);
-    const r = { x, y, w, h, type: 'boxes', n: 2 + Math.floor(rnd() * 3), veg: rnd() < 0.5 ? 'hakusai' : 'cabbage' };
+    const r = { x, y, w, h, type: boxType, n: 2 + Math.floor(rnd() * 3), veg: rnd() < 0.5 ? 'hakusai' : 'cabbage' };
     if (rects.some((o) => rectsOverlap(o, r, 56))) continue;
     if (keepClear.some((o) => rectsOverlap(o, r, 10))) continue;
-    boxes.push(r);
-    rects.push(r);
+    boxes.push(r); rects.push(r);
   }
-  // 段ボールの陰もサボり場所になる
   for (const b of boxes.slice(0, 5)) spots.push({ x: b.x + b.w / 2, y: b.y + b.h + 24, kind: 'lean', dir: 1, box: b });
 
-  // 歩けるセル(中心が障害物に近いセルはふさがる)
   const gw = Math.ceil(W / T); const gh = Math.ceil(H / T);
   const blocked = new Uint8Array(gw * gh);
   const PAD = 15;
-  for (let cy = 0; cy < gh; cy++) {
-    for (let cx = 0; cx < gw; cx++) {
-      const px = cx * T + T / 2; const py = cy * T + T / 2;
-      for (const r of rects) { if (pointInRect(px, py, r, PAD)) { blocked[cy * gw + cx] = 1; break; } }
-    }
-  }
-  const start = { x: W / 2, y: H - 130 };
-  const cell = (x, y) => [clamp(Math.floor(x / T), 0, gw - 1), clamp(Math.floor(y / T), 0, gh - 1)];
-  const sc = cell(start.x, start.y);
-  let reach = floodFill(blocked, gw, gh, sc[0], sc[1]);
-  // 届かない場所を作ってしまった段ボールは取りのぞく
-  const isReach = (x, y) => { const c = cell(x, y); return !!reach[c[1] * gw + c[0]]; };
-  const targets = stations.map((s) => [s.sx, s.sy]).concat(spots.map((s) => [s.x, s.y]), gossipSpots.map((s) => [s.x, s.y]), [[dock.x, dock.y + 50]]);
-  for (let pass = 0; pass < 3 && !targets.every(([x, y]) => isReach(x, y)); pass++) {
-    for (const b of boxes.slice()) {
-      const near = targets.some(([x, y]) => !isReach(x, y) && Math.abs(x - (b.x + b.w / 2)) < 200 && Math.abs(y - (b.y + b.h / 2)) < 200);
-      if (!near) continue;
-      rects.splice(rects.indexOf(b), 1); boxes.splice(boxes.indexOf(b), 1);
-      const sp = spots.findIndex((s) => s.box === b); if (sp >= 0) spots.splice(sp, 1);
-    }
+  const fillBlocked = () => {
     blocked.fill(0);
     for (let cy = 0; cy < gh; cy++) for (let cx = 0; cx < gw; cx++) {
       const px = cx * T + T / 2; const py = cy * T + T / 2;
       for (const r of rects) { if (pointInRect(px, py, r, PAD)) { blocked[cy * gw + cx] = 1; break; } }
     }
+  };
+  fillBlocked();
+  const cell = (x, y) => [clamp(Math.floor(x / T), 0, gw - 1), clamp(Math.floor(y / T), 0, gh - 1)];
+  const sc = cell(L.start.x, L.start.y);
+  let reach = floodFill(blocked, gw, gh, sc[0], sc[1]);
+  const isReach = (x, y) => { const c = cell(x, y); return !!reach[c[1] * gw + c[0]]; };
+  const targets = () => stations.map((s) => [s.sx, s.sy]).concat(spots.map((s) => [s.x, s.y]), gossipSpots.map((s) => [s.x, s.y]), [[L.dock.x, L.dock.y + 50]]);
+  // 届かない場所を作ってしまった段ボールは取りのぞく
+  for (let pass = 0; pass < 3 && !targets().every(([x, y]) => isReach(x, y)); pass++) {
+    for (const b of boxes.slice()) {
+      const near = targets().some(([x, y]) => !isReach(x, y) && Math.abs(x - (b.x + b.w / 2)) < 200 && Math.abs(y - (b.y + b.h / 2)) < 200);
+      if (!near) continue;
+      rects.splice(rects.indexOf(b), 1); boxes.splice(boxes.indexOf(b), 1);
+      const sp = spots.findIndex((s) => s.box === b); if (sp >= 0) spots.splice(sp, 1);
+    }
+    fillBlocked();
     reach = floodFill(blocked, gw, gh, sc[0], sc[1]);
   }
-  // 立つ場所が障害物に近すぎて歩けないセルに乗っていたら、いちばん近い歩けるセルの中心へ寄せる
+  // 立つ場所が歩けないセルに乗っていたら、いちばん近い歩けるセルの中心へ寄せる
   const snap = (p) => {
     if (isReach(p.x, p.y)) return;
-    let best = null; let bd = 1e9;
+    let best = null; let bd = 1e18;
     for (let cy = 1; cy < gh - 1; cy++) for (let cx = 1; cx < gw - 1; cx++) {
       if (!reach[cy * gw + cx]) continue;
       const d = (cx * T + T / 2 - p.x) ** 2 + (cy * T + T / 2 - p.y) ** 2;
@@ -705,11 +799,10 @@ function buildWorld(stageNo, seed) {
   for (const s of spots) snap(s);
   for (const s of gossipSpots) snap(s);
   for (const s of stations) { const q = { x: s.sx, y: s.sy }; snap(q); s.sx = q.x; s.sy = q.y; }
-  // 歩ける空きセルのリスト(ハリセンを落とす場所などに使う)
   const freeCells = [];
   for (let cy = 1; cy < gh - 1; cy++) for (let cx = 1; cx < gw - 1; cx++) if (reach[cy * gw + cx]) freeCells.push([cx * T + T / 2, cy * T + T / 2]);
 
-  return { stage: stageNo, W, H, T, rects, belts, stations, spots, gossipSpots, props, boxes, dock, start, blocked, reach, gw, gh, freeCells, veg: st.veg, rnd: mulberry32((seed || 1) * 31 + stageNo) };
+  return { stage: stageNo, layout: st.layout || 'rows', W, H, T, rects, belts: L.belts, stations, spots, gossipSpots, props: L.props, boxes, dock: L.dock, start: L.start, blocked, reach, gw, gh, freeCells, veg: st.veg, rnd: mulberry32((CONFIG.tile + stageNo) * 31 + boxes.length) };
 }
 
 // セル座標 ⇔ ワールド座標
@@ -720,30 +813,20 @@ function lineClear(w, ax, ay, bx, by, r) {
   for (const rc of w.rects) if (segmentHitsRect(ax, ay, bx, by, rc, r)) return false;
   return true;
 }
+function nearestOpen(w, c) {
+  if (!w.blocked[c[1] * w.gw + c[0]]) return c;
+  let best = null; let bd = 1e9;
+  for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+    const cx = c[0] + dx; const cy = c[1] + dy;
+    if (cx < 0 || cy < 0 || cx >= w.gw || cy >= w.gh || w.blocked[cy * w.gw + cx]) continue;
+    const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = [cx, cy]; }
+  }
+  return best;
+}
 // 経路(ワールド座標の点列)。見つからないときは null
 function findPath(w, ax, ay, bx, by) {
-  const a = toCell(w, ax, ay); const b = toCell(w, bx, by);
-  // 目的地のセルがふさがっていたら、近くの歩けるセルに寄せる
-  if (w.blocked[b[1] * w.gw + b[0]]) {
-    let best = null; let bd = 1e9;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      const cx = b[0] + dx; const cy = b[1] + dy;
-      if (cx < 0 || cy < 0 || cx >= w.gw || cy >= w.gh || w.blocked[cy * w.gw + cx]) continue;
-      const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = [cx, cy]; }
-    }
-    if (!best) return null;
-    b[0] = best[0]; b[1] = best[1];
-  }
-  if (w.blocked[a[1] * w.gw + a[0]]) {
-    let best = null; let bd = 1e9;
-    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-      const cx = a[0] + dx; const cy = a[1] + dy;
-      if (cx < 0 || cy < 0 || cx >= w.gw || cy >= w.gh || w.blocked[cy * w.gw + cx]) continue;
-      const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = [cx, cy]; }
-    }
-    if (!best) return null;
-    a[0] = best[0]; a[1] = best[1];
-  }
+  const a = nearestOpen(w, toCell(w, ax, ay)); const b = nearestOpen(w, toCell(w, bx, by));
+  if (!a || !b) return null;
   const cells = bfsPath(w.blocked, w.gw, w.gh, a[0], a[1], b[0], b[1]);
   if (!cells) return null;
   const pts = cells.map(([cx, cy]) => { const c = cellCenter(w, cx, cy); return { x: c[0], y: c[1] }; });
@@ -897,6 +980,72 @@ const Art = (() => {
         g.save(); g.translate(-10, -15); g.scale(0.5, 0.5); drawVeg(g, veg, 16); g.restore();
       });
     }
+    // 縦のラインの作業台(細長い)
+    S.tableV = {};
+    for (const veg of ['hakusai', 'cabbage']) {
+      S.tableV[veg] = mk(44, 84, 22, 70, (g) => {
+        shadow(g, 18, 6, 0.22, 2, 10);
+        rrect(g, -15, -60, 30, 58, 3, '#cfd6e0', 2.2);
+        g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(-12, -57, 3, 52);
+        for (const y of [0]) for (const x of [-12, 8]) rrect(g, x, y - 2, 5, 10, 1, '#9aa5b5', 1.4);
+        rrect(g, -11, -52, 22, 26, 2, '#f5e4c3', 1.6);
+        line(g, -6, -20, 6, -8, '#e8edf5', 3.2); line(g, -6, -20, 6, -8, OUT, 1.2);
+        g.save(); g.translate(0, -40); g.scale(0.5, 0.5); drawVeg(g, veg, 16); g.restore();
+      });
+    }
+    // 小さい段ボール(ベルトに流れる)
+    S.boxSmall = mk(36, 30, 18, 24, (g) => {
+      poly(g, [-13, -5, 13, -5, 13, 6, -13, 6], '#d9a86a', 1.6);
+      poly(g, [-13, -5, -9, -13, 17, -13, 13, -5], '#e9c389', 1.6);
+      poly(g, [13, -5, 17, -13, 17, -2, 13, 6], '#b9844d', 1.6);
+      g.fillStyle = '#9b6a3a'; g.fillRect(-13, -1, 26, 2);
+    });
+    // 箱詰め台: 木の台に 組み立て中の段ボールとテープ
+    const packTop = (g, w, h) => {
+      rrect(g, -w / 2, -h, w, h, 3, '#c99a62', 2.2);
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(-w / 2 + 3, -h + 3, w - 6, 3);
+      g.strokeStyle = 'rgba(90,60,30,0.35)'; g.lineWidth = 1; for (let y = -h + 9; y < -2; y += 7) { g.beginPath(); g.moveTo(-w / 2 + 3, y); g.lineTo(w / 2 - 3, y); g.stroke(); }
+    };
+    const openBox = (g, x, y, sc) => {
+      g.save(); g.translate(x, y); g.scale(sc, sc);
+      poly(g, [-12, -6, 12, -6, 12, 8, -12, 8], '#d9a86a', 1.6);
+      poly(g, [-12, -6, -18, -14, -6, -14, 0, -6], '#e9c389', 1.4);
+      poly(g, [12, -6, 18, -14, 6, -14, 0, -6], '#e9c389', 1.4);
+      g.fillStyle = '#5a3f22'; g.fillRect(-10, -5, 20, 4);
+      g.restore();
+    };
+    const tape = (g, x, y) => { circ(g, x, y, 4.6, '#e8e2d0', 1.6); circ(g, x, y, 1.8, '#a0947a', 0); };
+    S.pack = mk(70, 56, 35, 40, (g) => {
+      shadow(g, 32, 6, 0.22, 2, 10);
+      packTop(g, 58, 30); g.translate(0, 0);
+      for (const x of [-25, 21]) rrect(g, x, 0, 5, 12, 1, '#8a6a44', 1.6);
+      g.save(); g.translate(0, -30); openBox(g, -8, 14, 0.9); tape(g, 18, 10); g.restore();
+    });
+    S.packV = mk(44, 84, 22, 70, (g) => {
+      shadow(g, 18, 6, 0.22, 2, 10);
+      g.save(); g.translate(0, -2); rrect(g, -15, -58, 30, 58, 3, '#c99a62', 2.2); g.restore();
+      for (const x of [-12, 8]) rrect(g, x, -2, 5, 10, 1, '#8a6a44', 1.4);
+      openBox(g, 0, -40, 0.75); tape(g, 0, -16);
+    });
+    S.packIsland = mk(120, 80, 60, 60, (g) => {
+      shadow(g, 54, 8, 0.25, 2, 12);
+      packTop(g, 100, 44);
+      for (const x of [-46, 40]) rrect(g, x, 0, 6, 14, 1, '#8a6a44', 1.6);
+      g.save(); g.translate(0, -44); openBox(g, -28, 20, 1); openBox(g, 6, 22, 0.9); tape(g, 34, 16); g.restore();
+      // 伝票
+      rrect(g, 20, -40, 18, 12, 1.5, '#fff', 1.2); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(23, -37, 12, 1.5); g.fillRect(23, -33, 9, 1.5);
+    });
+    // ラップで巻いた 出荷待ちパレット
+    S.wrap = mk(110, 130, 55, 118, (g) => {
+      shadow(g, 48, 9, 0.25, 2, 6);
+      rrect(g, -45, -14, 90, 14, 2, '#b58a52', 2);
+      g.fillStyle = '#8a6438'; for (const x of [-38, -6, 26]) g.fillRect(x, -10, 12, 8);
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) blit(g, S.box, -30 + i * 30 + (j % 2) * 3, -16 - j * 26, 1);
+      // ラップのつや
+      g.fillStyle = 'rgba(220,240,255,0.28)'; g.fillRect(-44, -100, 90, 86);
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2; for (let y = -96; y < -18; y += 14) { g.beginPath(); g.moveTo(-44, y); g.quadraticCurveTo(0, y + 6, 46, y - 2); g.stroke(); }
+      rrect(g, -12, -70, 26, 16, 2, '#fff', 1.4); g.fillStyle = '#c0662a'; g.fillRect(-9, -66, 20, 3); g.fillStyle = '#333'; g.fillRect(-9, -61, 14, 2);
+    });
     // ハリセン(床に落ちているもの)
     S.pick = {};
     for (const k of ['normal', 'jumbo', 'spark']) S.pick[k] = mk(90, 70, 45, 40, (g) => { shadow(g, 30, 8, 0.2, 2, 6); g.rotate(-0.5); drawHarisen(g, k, 1); });
@@ -906,6 +1055,54 @@ const Art = (() => {
   function softShadow(g, rx, ry, a, ox, oy) {
     if (S.shadowBlob) { g.save(); g.globalAlpha = a / 0.5; g.drawImage(S.shadowBlob.c, ox - rx, oy - ry, rx * 2, ry * 2); g.restore(); return; }
     shadow(g, rx, ry, a, ox, oy);
+  }
+
+  // ---------- 大きさが毎回ちがう物 ----------
+  // 緑のコンテナを積んだ山(キャベツ入り)
+  function drawBins(g, r) {
+    const n = r.n || 2;
+    const cols = Math.max(1, Math.round(r.w / 46));
+    shadow(g, r.w / 2 + 4, 7, 0.22, r.x + r.w / 2, r.y + r.h + 2);
+    for (let i = 0; i < cols; i++) for (let j = 0; j < n; j++) {
+      const x = r.x + 2 + i * 46 + (j % 2) * 3; const y = r.y + r.h - 26 - j * 22;
+      rrect(g, x, y, 42, 24, 3, j % 2 ? '#3fa65a' : '#4cbf68', 2);
+      g.fillStyle = 'rgba(20,70,30,0.45)'; for (let k = 0; k < 4; k++) g.fillRect(x + 5 + k * 9, y + 7, 5, 10);
+      if (j === n - 1) for (let k = 0; k < 2; k++) { g.save(); g.translate(x + 12 + k * 18, y - 3); g.scale(0.45, 0.45); drawCabbage(g, 16); g.restore(); }
+    }
+  }
+  // 背の高い棚(オレンジの柱・段ボールの段)
+  function drawRack(g, r) {
+    const H = 104; const x0 = r.x; const x1 = r.x + r.w; const yb = r.y + r.h;
+    shadow(g, r.w / 2 + 6, 9, 0.28, r.x + r.w / 2, yb + 2);
+    g.fillStyle = 'rgba(60,40,20,0.15)'; g.fillRect(x0, yb - H, r.w, H);
+    const rnd = mulberry32(Math.round(r.x * 7 + r.y));
+    for (let lv = 0; lv < 3; lv++) {
+      const y = yb - 8 - lv * 34;
+      for (let x = x0 + 26; x < x1 - 14; x += 34) { if (rnd() < 0.18) continue; blit(g, S.box, x, y, 0.9); }
+      rrect(g, x0, y - 2, r.w, 6, 1, '#2f6fb8', 1.6);
+    }
+    for (let x = x0; x <= x1 - 8; x += Math.max(60, (r.w - 8) / Math.max(1, Math.round(r.w / 120)))) rrect(g, x, yb - H - 6, 8, H + 6, 1.5, '#e07a2a', 1.8);
+    rrect(g, x1 - 8, yb - H - 6, 8, H + 6, 1.5, '#e07a2a', 1.8);
+  }
+  // 洗浄タンク: 水の中でキャベツが ぷかぷか
+  function drawTank(g, r, t) {
+    shadow(g, r.w / 2 + 6, 8, 0.28, r.x + r.w / 2, r.y + r.h + 2);
+    rrect(g, r.x - 6, r.y - 18, r.w + 12, r.h + 18, 10, '#b9c3cf', 2.6);
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(r.x - 2, r.y - 14, r.w + 4, 4);
+    g.save(); rrect(g, r.x + 4, r.y - 10, r.w - 8, r.h - 6, 8, null, 0); g.clip();
+    const gr = g.createLinearGradient(0, r.y - 10, 0, r.y + r.h); gr.addColorStop(0, '#9fdcf5'); gr.addColorStop(1, '#3f9fd8');
+    g.fillStyle = gr; g.fillRect(r.x, r.y - 12, r.w, r.h + 8);
+    for (let i = 0; i < 5; i++) {
+      const x = r.x + 18 + ((i * 29 + t * 18) % (r.w - 30)); const y = r.y + 10 + (i % 2) * 28 + Math.sin(t * 2 + i) * 4;
+      g.save(); g.translate(x, y); g.rotate(Math.sin(t + i) * 0.3); g.scale(0.62, 0.62); drawCabbage(g, 16); g.restore();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 2;
+    for (let i = 0; i < 4; i++) { const y = r.y + ((t * 20 + i * 22) % (r.h - 6)); g.beginPath(); g.moveTo(r.x + 10, y); g.quadraticCurveTo(r.x + r.w / 2, y + 4, r.x + r.w - 10, y); g.stroke(); }
+    for (let i = 0; i < 6; i++) { const bx = r.x + 12 + ((i * 37) % (r.w - 24)); const by2 = r.y + r.h - 10 - ((t * 30 + i * 13) % (r.h - 10)); circ(g, bx, by2, 2.2, 'rgba(255,255,255,0.7)', 0); }
+    g.restore();
+    rrect(g, r.x + 4, r.y - 10, r.w - 8, r.h - 6, 8, null, 2.2);
+    // 出口の じょうご(ベルトへ落ちる)
+    poly(g, [r.x + r.w / 2 - 26, r.y + r.h - 4, r.x + r.w / 2 + 26, r.y + r.h - 4, r.x + r.w / 2 + 14, r.y + r.h + 18, r.x + r.w / 2 - 14, r.y + r.h + 18], '#a9b4c2', 2);
   }
 
   // ---------- ハリセン ----------
@@ -1347,7 +1544,12 @@ const Art = (() => {
     const h = lh * lines.length + pad * 1.2;
     w += pad * 2.2;
     if (box) {
-      if (y - h - 8 < box.top) y = box.top + h + 8;
+      // 上にはみ出すときは下げる。下げると顔に重なるので、そのぶん横へよける
+      if (y - h - 8 < box.top) {
+        const ny = box.top + h + 8;
+        if (box.sideX && ny - y > 20) { const dir = x + box.sideX + w < box.right ? 1 : -1; x += dir * (box.sideX + w / 2); }
+        y = ny;
+      }
       x = clamp(x, box.left + w / 2 + 8, box.right - w / 2 - 8);
     }
     const bx = x - w / 2; const by = y - h;
@@ -1383,7 +1585,7 @@ const Art = (() => {
     SC = sc;
     buildProps();
   }
-  return { init, S, OUT, SUIT, GLOVE, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
+  return { init, S, OUT, SUIT, GLOVE, drawBins, drawRack, drawTank, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
 })();
 
 /* ---- js/audio.js ---- */
@@ -1768,7 +1970,7 @@ let nextId = 1;
 function makeWorker(kind, x, y) {
   const W = CONFIG.worker;
   const hpBase = W.hp[kind] || 0;
-  const hp = kind === 'good' ? 0 : Math.max(2, Math.round(hpBase * G.diff.hpMul));
+  const hp = kind === 'good' ? 0 : Math.max(2, Math.round(hpBase * G.diff.hpMul * stageHpMul()));
   return { id: nextId++, x, y, r: W.r, vx: 0, vy: 0, face: Math.random() < 0.5 ? 1 : -1, walkT: 0, moving: false, kind, origKind: kind, hp, maxHp: hp, state: 'idle', st: 0, station: null, spot: null, partner: null, target: null, path: null, pathI: 0, speech: null, talkT: rr(0.5, 3), hitT: 0, kbx: 0, kby: 0, reformed: false, relapseT: 0, pretendT: 0, retaliateCd: 0, veg: 'cabbage', workKind: Math.random() < 0.6 ? 'chop' : 'box', badge: rpick(['#4fa4e8', '#ffb347', '#8fd37a', '#f58fb0']), wanderT: rr(25, 60), seed: Math.random() * 100 };
 }
 function freeStation(x, y, exclude) {
@@ -1782,8 +1984,17 @@ function freeStation(x, y, exclude) {
 }
 function takeStation(w, s) {
   if (w.station) w.station.busy = null;
-  w.station = s; s.busy = w; w.veg = s.veg;
+  w.station = s; s.busy = w; w.veg = s.veg === 'mix' ? (Math.random() < 0.5 ? 'cabbage' : 'hakusai') : s.veg;
+  if (s.kind === 'pack') w.workKind = 'box';
 }
+// 作業台の前に立ったときの向き: 縦のラインは台の方を見る。横のラインは左右どちらでも
+function faceStation(w) {
+  const s = w.station;
+  if (s && s.vertical) w.face = s.side < 0 ? 1 : -1;
+  else w.face = Math.random() < 0.5 ? 1 : -1;
+}
+// ステージが進むほど 悪い人は打たれ強い
+const stageHpMul = () => (CONFIG.stages[G.stage] && CONFIG.stages[G.stage].hpMul) || 1;
 function spawnWorkers() {
   const stg = CONFIG.stages[G.stage];
   const W = G.world;
@@ -1796,7 +2007,7 @@ function spawnWorkers() {
   for (let i = 0; i < stg.good && si < stations.length; i++) {
     const s = stations[si++];
     const w = makeWorker('good', s.sx, s.sy);
-    takeStation(w, s); w.state = 'work'; w.face = rnd() < 0.5 ? 1 : -1;
+    takeStation(w, s); w.state = 'work'; faceStation(w);
     workers.push(w);
   }
   const extra = G.diff.badExtra;
@@ -1893,7 +2104,7 @@ function reform(w) {
 function relapse(w) {
   w.kind = w.origKind === 'minion' ? 'sabo' : w.origKind;
   w.reformed = false;
-  w.hp = w.maxHp = Math.max(2, Math.round((CONFIG.worker.hp[w.kind] || 4) * G.diff.hpMul));
+  w.hp = w.maxHp = Math.max(2, Math.round((CONFIG.worker.hp[w.kind] || 4) * G.diff.hpMul * stageHpMul()));
   G.stats.relapses++;
   say(w, rpick(LINES.relapse), 'think', 1.8);
   Sound.sfx.relapse();
@@ -1943,7 +2154,7 @@ function updateWorker(w, dt) {
     case 'cry': if (w.st <= 0) { setState(w, w.station ? 'work' : 'idle'); if (!w.station) goWork(w); } break;
     case 'walk': {
       if (followPath(w, W.speed, dt)) {
-        if (w.kind === 'good') { if (w.station) { setState(w, 'work'); w.face = Math.random() < 0.5 ? 1 : -1; } else goWork(w); }
+        if (w.kind === 'good') { if (w.station) { setState(w, 'work'); faceStation(w); } else goWork(w); }
         else if (w.kind === 'sabo' || w.kind === 'minion') {
           if (w.target && w.target.kind === 'good' && dist(w.x, w.y, w.target.x, w.target.y) < 60) { setState(w, 'bother', 2.4); w.face = w.target.x > w.x ? 1 : -1; w.target.victimT = 4; say(w, rpick(w.kind === 'minion' ? LINES.minion : LINES.sabo), 'talk', 2); }
           else setState(w, 'idle', rr(0.5, 1.5));
@@ -2414,7 +2625,8 @@ function resetGame() {
   G.boss = null;
   G.pickups = []; G.projectiles = []; G.particles = []; G.texts = []; G.swings = []; G.impacts = []; G.zaps = []; G.rings = [];
   G.score = 0; G.combo = 0; G.comboT = 0; G.comboMult = 1;
-  G.timeLeft = G.diff.time;
+  G.timeLeft = G.diff.time + (CONFIG.stages[G.stage].timeAdd || 0);
+  G.timeTotal = G.timeLeft;
   G.gauge = 0; G.gaugeNeed = G.diff.needReform[G.stage];
   G.phase = 'hunt'; G.bossIntro = 0; G.wonT = 0;
   G.pickupT = CONFIG.pickup.first;
@@ -2467,10 +2679,16 @@ const Render = (() => {
     return true;
   }
 
-  // 床タイル(白っぽい衛生的なタイル、目地)
+  const TH = () => CONFIG.stages[G.stage].theme;
+  let floorStage = -1;
+
+  // 床: ステージ1は白いタイル、2はミントのタイル、3はコンクリートの大きな床
   function makeFloorPattern(ctx) {
     patternTried = true;
-    const TILE_U = 160;
+    floorStage = G.stage;
+    const th = TH();
+    const tile = th.tile;
+    const TILE_U = tile ? tile * 2 : 240;
     let ps = Math.max(1, spriteScale);
     const test = ctx.createPattern(document.createElement('canvas'), 'repeat');
     const canScale = !!(test && typeof test.setTransform === 'function' && typeof DOMMatrix !== 'undefined');
@@ -2479,37 +2697,75 @@ const Render = (() => {
     c.width = TILE_U * ps; c.height = TILE_U * ps;
     const g = c.getContext('2d');
     g.scale(ps, ps);
-    g.fillStyle = '#e9edf3'; g.fillRect(0, 0, TILE_U, TILE_U);
-    const rnd = mulberry32(3);
-    for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) {
-      const k = rnd();
-      g.fillStyle = k < 0.5 ? '#eef1f6' : k < 0.8 ? '#e6eaf1' : '#f2f4f8';
-      g.fillRect(tx * 80 + 1.5, ty * 80 + 1.5, 77, 77);
-      // タイルのつや
-      const gr = g.createLinearGradient(tx * 80, ty * 80, tx * 80 + 80, ty * 80 + 80);
-      gr.addColorStop(0, 'rgba(255,255,255,0.35)'); gr.addColorStop(0.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(120,140,170,0.08)');
-      g.fillStyle = gr; g.fillRect(tx * 80 + 1.5, ty * 80 + 1.5, 77, 77);
+    g.fillStyle = th.floorA; g.fillRect(0, 0, TILE_U, TILE_U);
+    const rnd = mulberry32(3 + G.stage);
+    if (tile) {
+      for (let ty = 0; ty < 2; ty++) for (let tx = 0; tx < 2; tx++) {
+        const k = rnd();
+        g.fillStyle = k < 0.5 ? th.floorA : th.floorB;
+        g.fillRect(tx * tile + 1.5, ty * tile + 1.5, tile - 3, tile - 3);
+        const gr = g.createLinearGradient(tx * tile, ty * tile, tx * tile + tile, ty * tile + tile);
+        gr.addColorStop(0, 'rgba(255,255,255,0.35)'); gr.addColorStop(0.5, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(60,90,80,0.07)');
+        g.fillStyle = gr; g.fillRect(tx * tile + 1.5, ty * tile + 1.5, tile - 3, tile - 3);
+      }
+      g.strokeStyle = th.grout; g.lineWidth = 2;
+      g.beginPath(); g.moveTo(tile, 0); g.lineTo(tile, TILE_U); g.moveTo(0, tile); g.lineTo(TILE_U, tile); g.moveTo(0, 0.5); g.lineTo(TILE_U, 0.5); g.moveTo(0.5, 0); g.lineTo(0.5, TILE_U); g.stroke();
+    } else {
+      // コンクリート: まだら・小さな粒・ひび・目地
+      for (let i = 0; i < 26; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(120,100,70,0.06)' : 'rgba(255,255,255,0.12)'; g.beginPath(); g.ellipse(rnd() * TILE_U, rnd() * TILE_U, 14 + rnd() * 40, 8 + rnd() * 24, rnd() * 3, 0, TAU); g.fill(); }
+      for (let i = 0; i < 260; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(90,75,55,0.18)' : 'rgba(255,255,255,0.35)'; g.fillRect(rnd() * TILE_U, rnd() * TILE_U, 1.6, 1.6); }
+      g.strokeStyle = 'rgba(100,85,60,0.18)'; g.lineWidth = 1.2; g.beginPath(); let x = rnd() * TILE_U; let y = rnd() * TILE_U; g.moveTo(x, y); for (let i = 0; i < 6; i++) { x += (rnd() - 0.5) * 40; y += rnd() * 20; g.lineTo(x, y); } g.stroke();
+      g.strokeStyle = th.grout; g.lineWidth = 3; g.beginPath(); g.moveTo(0, 1.5); g.lineTo(TILE_U, 1.5); g.moveTo(1.5, 0); g.lineTo(1.5, TILE_U); g.stroke();
     }
-    g.strokeStyle = 'rgba(150,165,190,0.5)'; g.lineWidth = 2;
-    g.beginPath(); g.moveTo(80, 0); g.lineTo(80, TILE_U); g.moveTo(0, 80); g.lineTo(TILE_U, 80); g.moveTo(0, 0.5); g.lineTo(TILE_U, 0.5); g.moveTo(0.5, 0); g.lineTo(0.5, TILE_U); g.stroke();
     floorPattern = ctx.createPattern(c, 'repeat');
     if (canScale && floorPattern) { try { floorPattern.setTransform(new DOMMatrix().scale(1 / ps)); } catch (e) { floorPattern = null; } }
   }
 
   // ---------- 床・壁・ライン ----------
-  function drawFloor(ctx, left, top, right, bottom) {
+  function drawFloor(ctx, t, left, top, right, bottom) {
+    if (floorStage !== G.stage) { floorPattern = null; patternTried = false; }
     if (!floorPattern && !patternTried) makeFloorPattern(ctx);
-    ctx.fillStyle = floorPattern || '#e9edf3';
+    const th = TH();
+    ctx.fillStyle = floorPattern || th.floorA;
     ctx.fillRect(left, top, right - left, bottom - top);
     const W = G.world;
-    // 黄色い安全ライン(ラインの前後)
-    ctx.strokeStyle = 'rgba(255,200,40,0.55)'; ctx.lineWidth = 6; ctx.setLineDash([30, 18]);
+    // ぬれた床(キャベツライン): 水たまりが きらきら
+    if (W.layout === 'columns') {
+      if (!W.puddles) { const r = mulberry32(77); W.puddles = []; for (let i = 0; i < 26; i++) { const c = W.freeCells[Math.floor(r() * W.freeCells.length)]; W.puddles.push([c[0] + (r() - 0.5) * 30, c[1] + (r() - 0.5) * 30, 26 + r() * 40, r() * 6]); } }
+      for (const [x, y, rr, ph] of W.puddles) {
+        if (x < left - rr || x > right + rr || y < top - rr || y > bottom + rr) continue;
+        ctx.fillStyle = 'rgba(110,190,230,0.22)'; ctx.beginPath(); ctx.ellipse(x, y, rr, rr * 0.45, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = `rgba(255,255,255,${0.35 + Math.sin(t * 2 + ph) * 0.2})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x - rr * 0.2, y - rr * 0.1, rr * 0.4, rr * 0.12, 0, Math.PI * 1.1, Math.PI * 1.8); ctx.stroke();
+      }
+    }
+    // 出荷フロア: シャッター前の しまもようの荷さばき場と、フォークリフトの通路の矢印
+    if (W.layout === 'warehouse') {
+      for (const p of W.props) {
+        if (p.type !== 'door') continue;
+        const x0 = p.x - p.w / 2 - 30; const y0 = 50; const w = p.w + 60; const h = 120;
+        if (x0 > right || x0 + w < left || y0 > bottom) continue;
+        ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+        ctx.fillStyle = 'rgba(255,200,40,0.18)'; ctx.fillRect(x0, y0, w, h);
+        ctx.strokeStyle = 'rgba(60,45,30,0.16)'; ctx.lineWidth = 12;
+        for (let x = x0 - h; x < x0 + w; x += 34) { ctx.beginPath(); ctx.moveTo(x, y0 + h); ctx.lineTo(x + h, y0); ctx.stroke(); }
+        ctx.restore();
+        ctx.strokeStyle = th.lane; ctx.lineWidth = 5; ctx.strokeRect(x0, y0, w, h);
+      }
+      ctx.fillStyle = 'rgba(255,190,20,0.35)';
+      for (let x = 200; x < W.W - 200; x += 260) { const y = W.H - 260; if (x < left - 40 || x > right + 40 || y < top - 40 || y > bottom + 40) continue; ctx.beginPath(); ctx.moveTo(x, y - 16); ctx.lineTo(x + 40, y); ctx.lineTo(x, y + 16); ctx.closePath(); ctx.fill(); }
+      ctx.strokeStyle = th.lane; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(120, W.H - 300); ctx.lineTo(W.W - 120, W.H - 300); ctx.moveTo(120, W.H - 220); ctx.lineTo(W.W - 120, W.H - 220); ctx.stroke();
+    }
+    // 安全ライン(ベルトの両わき)
+    ctx.strokeStyle = th.lane; ctx.lineWidth = 6; ctx.setLineDash([30, 18]);
     for (const b of W.belts) {
-      if (b.y - 120 > bottom || b.y + b.h + 120 < top) continue;
-      ctx.beginPath(); ctx.moveTo(b.x - 20, b.y - 92); ctx.lineTo(b.x + b.w + 20, b.y - 92); ctx.moveTo(b.x - 20, b.y + b.h + 92); ctx.lineTo(b.x + b.w + 20, b.y + b.h + 92); ctx.stroke();
+      if (b.dir === 'corner') continue;
+      if (b.x - 120 > right || b.x + b.w + 120 < left || b.y - 120 > bottom || b.y + b.h + 120 < top) continue;
+      ctx.beginPath();
+      if (b.dir === 'v') { ctx.moveTo(b.x - 96, b.y - 20); ctx.lineTo(b.x - 96, b.y + b.h + 20); ctx.moveTo(b.x + b.w + 96, b.y - 20); ctx.lineTo(b.x + b.w + 96, b.y + b.h + 20); }
+      else { ctx.moveTo(b.x - 20, b.y - 92); ctx.lineTo(b.x + b.w + 20, b.y - 92); ctx.moveTo(b.x - 20, b.y + b.h + 92); ctx.lineTo(b.x + b.w + 20, b.y + b.h + 92); }
+      ctx.stroke();
     }
     ctx.setLineDash([]);
-    // 入口の床マーク
     for (const p of W.props) {
       if (p.type === 'floorMark') {
         ctx.fillStyle = 'rgba(80,160,230,0.18)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(p.x - 90, p.y - 40, 180, 80, 14) : ctx.rect(p.x - 90, p.y - 40, 180, 80); ctx.fill();
@@ -2519,86 +2775,121 @@ const Render = (() => {
   }
   function drawWalls(ctx, left, top, right, bottom) {
     const W = G.world;
+    const th = TH();
     for (const r of W.rects) {
       if (r.type !== 'wall') continue;
       if (r.x > right || r.x + r.w < left || r.y > bottom || r.y + r.h < top) continue;
-      ctx.fillStyle = '#b9c6d8'; ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.fillStyle = '#d6dfeb'; if (r.h > r.w) ctx.fillRect(r.x + 6, r.y, r.w - 12, r.h); else ctx.fillRect(r.x, r.y + 6, r.w, r.h - 12);
-      // パネルの線
-      ctx.strokeStyle = 'rgba(90,110,140,0.35)'; ctx.lineWidth = 2; ctx.beginPath();
-      if (r.h > r.w) for (let y = r.y; y < r.y + r.h; y += 120) { ctx.moveTo(r.x, y); ctx.lineTo(r.x + r.w, y); } else for (let x = r.x; x < r.x + r.w; x += 120) { ctx.moveTo(x, r.y); ctx.lineTo(x, r.y + r.h); }
+      ctx.fillStyle = th.wall; ctx.fillRect(r.x, r.y, r.w, r.h);
+      ctx.fillStyle = th.wallLight; if (r.h > r.w) ctx.fillRect(r.x + 6, r.y, r.w - 12, r.h); else ctx.fillRect(r.x, r.y + 6, r.w, r.h - 12);
+      ctx.strokeStyle = 'rgba(60,60,60,0.25)'; ctx.lineWidth = 2; ctx.beginPath();
+      const step = W.layout === 'warehouse' ? 60 : 120;
+      if (r.h > r.w) for (let y = r.y; y < r.y + r.h; y += step) { ctx.moveTo(r.x, y); ctx.lineTo(r.x + r.w, y); } else for (let x = r.x; x < r.x + r.w; x += step) { ctx.moveTo(x, r.y); ctx.lineTo(x, r.y + r.h); }
       ctx.stroke();
       ctx.strokeStyle = OUT; ctx.lineWidth = 3; ctx.strokeRect(r.x, r.y, r.w, r.h);
     }
-    // 搬入口のドア・看板
     for (const p of W.props) {
       if (p.type === 'door') {
-        const open = G.boss && G.boss.state === 'enter' ? 1 : (G.bossIntro > 0 ? 0.6 : 0);
-        ctx.fillStyle = '#5a6678'; ctx.fillRect(p.x - p.w / 2, 0, p.w, 44);
-        ctx.fillStyle = open ? '#2a2f3a' : '#8a97aa'; ctx.fillRect(p.x - p.w / 2 + 8, 4, p.w - 16, 40);
-        if (!open) { ctx.strokeStyle = 'rgba(40,50,70,0.5)'; ctx.lineWidth = 2; for (let y = 10; y < 44; y += 8) { ctx.beginPath(); ctx.moveTo(p.x - p.w / 2 + 8, y); ctx.lineTo(p.x + p.w / 2 - 8, y); ctx.stroke(); } }
-        ctx.strokeStyle = OUT; ctx.lineWidth = 3; ctx.strokeRect(p.x - p.w / 2, 0, p.w, 44);
-        // 注意のしまもよう
-        for (let x = p.x - p.w / 2; x < p.x + p.w / 2; x += 24) { ctx.fillStyle = (Math.floor(x / 24) % 2) ? '#ffcf3a' : '#2f2a3a'; ctx.fillRect(x, 44, 24, 8); }
-        ctx.font = `800 16px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#fff'; ctx.fillText('搬入口', p.x, 22);
+        const isDock = Math.abs(p.x - W.dock.x) < 2;
+        const open = isDock && (G.boss && G.boss.state === 'enter' ? 1 : (G.bossIntro > 0 ? 0.6 : 0));
+        const x0 = p.x - p.w / 2;
+        ctx.fillStyle = '#5a6678'; ctx.fillRect(x0, 0, p.w, 44);
+        if (p.shutter && !open) {
+          // 出荷口のシャッター(銀色の波板)
+          const gr = ctx.createLinearGradient(0, 4, 0, 44); gr.addColorStop(0, '#d9dde3'); gr.addColorStop(1, '#a9b0ba');
+          ctx.fillStyle = gr; ctx.fillRect(x0 + 6, 4, p.w - 12, 40);
+          ctx.strokeStyle = 'rgba(60,70,85,0.45)'; ctx.lineWidth = 2; for (let y = 8; y < 44; y += 5) { ctx.beginPath(); ctx.moveTo(x0 + 6, y); ctx.lineTo(x0 + p.w - 6, y); ctx.stroke(); }
+        } else {
+          ctx.fillStyle = open ? '#2a2f3a' : '#8a97aa'; ctx.fillRect(x0 + 8, 4, p.w - 16, 40);
+          if (!open) { ctx.strokeStyle = 'rgba(40,50,70,0.5)'; ctx.lineWidth = 2; for (let y = 10; y < 44; y += 8) { ctx.beginPath(); ctx.moveTo(x0 + 8, y); ctx.lineTo(x0 + p.w - 8, y); ctx.stroke(); } }
+        }
+        ctx.strokeStyle = OUT; ctx.lineWidth = 3; ctx.strokeRect(x0, 0, p.w, 44);
+        for (let x = x0; x < x0 + p.w; x += 24) { ctx.fillStyle = (Math.floor(x / 24) % 2) ? '#ffcf3a' : '#2f2a3a'; ctx.fillRect(x, 44, Math.min(24, x0 + p.w - x), 8); }
+        ctx.font = `800 17px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 4; ctx.strokeStyle = OUT; ctx.strokeText(p.label || '搬入口', p.x, 23); ctx.fillStyle = '#fff'; ctx.fillText(p.label || '搬入口', p.x, 23);
       } else if (p.type === 'sign') {
-        ctx.font = `800 15px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = `800 16px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const w = ctx.measureText(p.text).width + 24;
-        Art.rrect(ctx, p.x - w / 2, p.y + 6, w, 26, 4, '#fff', 2.4, '#2a7ad0');
-        ctx.fillStyle = '#2a7ad0'; ctx.fillText(p.text, p.x, p.y + 19);
+        Art.rrect(ctx, p.x - w / 2, p.y + 6, w, 28, 4, '#fff', 2.4, th.sign);
+        ctx.fillStyle = th.sign; ctx.fillText(p.text, p.x, p.y + 20);
       } else if (p.type === 'lineSign') {
-        ctx.font = `800 14px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        Art.rrect(ctx, p.x - 44, p.y - 16, 88, 32, 6, '#2f6fb8', 2.4);
+        ctx.font = `800 16px ${FONT}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const w = Math.max(88, ctx.measureText(p.text).width + 20);
+        Art.rrect(ctx, p.x - w / 2, p.y - 16, w, 32, 6, th.lineSign, 2.4);
         ctx.fillStyle = '#fff'; ctx.fillText(p.text, p.x, p.y);
       }
     }
   }
-  // ベルトコンベア: 黒いベルトの上を野菜が右へ流れる
+  // ベルトコンベア: 横は右へ、縦は下へ、角は回る台
   function drawBelts(ctx, t, left, top, right, bottom) {
     const W = G.world;
     const S = Art.S;
-    const st = CONFIG.stages[G.stage];
+    const th = TH();
+    const speed = 70;
     for (const b of W.belts) {
       if (b.x > right || b.x + b.w < left || b.y > bottom || b.y + b.h < top) continue;
-      // フレーム
-      Art.rrect(ctx, b.x - 6, b.y - 6, b.w + 12, b.h + 12, 8, '#8e9bb0', 3);
-      ctx.fillStyle = '#3a3f4c'; ctx.fillRect(b.x, b.y, b.w, b.h);
-      // ベルトの継ぎ目(動く)
-      const off = (t * 70) % 40;
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2;
-      ctx.beginPath(); for (let x = b.x + off; x < b.x + b.w; x += 40) { ctx.moveTo(x, b.y + 4); ctx.lineTo(x - 6, b.y + b.h - 4); } ctx.stroke();
-      ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.fillRect(b.x, b.y, b.w, 6);
-      // ローラー(端)
-      for (const x of [b.x, b.x + b.w]) { ctx.fillStyle = '#6a7486'; ctx.beginPath(); ctx.ellipse(x, b.y + b.h / 2, 7, b.h / 2 + 2, 0, 0, TAU); ctx.fill(); ctx.strokeStyle = OUT; ctx.lineWidth = 2; ctx.stroke(); }
-      // 野菜: 60px おき、左から右へ流れる
-      const veg = st.veg === 'mix' ? (b.line % 2 ? 'cabbage' : 'hakusai') : st.veg;
-      const spr = veg === 'cabbage' ? S.cabbageSmall : S.hakusaiSmall;
+      Art.rrect(ctx, b.x - 6, b.y - 6, b.w + 12, b.h + 12, b.dir === 'corner' ? 30 : 8, th.frame, 3);
+      ctx.fillStyle = '#3a3f4c';
+      if (b.dir === 'corner') {
+        ctx.beginPath(); ctx.arc(b.x + b.w / 2, b.y + b.h / 2, Math.min(b.w, b.h) / 2 - 2, 0, TAU); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 3;
+        for (let i = 0; i < 6; i++) { const a = t * 1.4 + (i * TAU) / 6; ctx.beginPath(); ctx.moveTo(b.x + b.w / 2, b.y + b.h / 2); ctx.lineTo(b.x + b.w / 2 + Math.cos(a) * 30, b.y + b.h / 2 + Math.sin(a) * 30); ctx.stroke(); }
+        continue;
+      }
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      const off = (t * speed) % 40;
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 2; ctx.beginPath();
+      if (b.dir === 'v') { for (let y = b.y + off; y < b.y + b.h; y += 40) { ctx.moveTo(b.x + 4, y); ctx.lineTo(b.x + b.w - 4, y - 6); } }
+      else { for (let x = b.x + off; x < b.x + b.w; x += 40) { ctx.moveTo(x, b.y + 4); ctx.lineTo(x - 6, b.y + b.h - 4); } }
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(0,0,0,0.25)'; if (b.dir === 'v') ctx.fillRect(b.x, b.y, 6, b.h); else ctx.fillRect(b.x, b.y, b.w, 6);
+      ctx.fillStyle = '#6a7486'; ctx.strokeStyle = OUT; ctx.lineWidth = 2;
+      if (b.dir === 'v') { for (const y of [b.y, b.y + b.h]) { ctx.beginPath(); ctx.ellipse(b.x + b.w / 2, y, b.w / 2 + 2, 7, 0, 0, TAU); ctx.fill(); ctx.stroke(); } }
+      else { for (const x of [b.x, b.x + b.w]) { ctx.beginPath(); ctx.ellipse(x, b.y + b.h / 2, 7, b.h / 2 + 2, 0, 0, TAU); ctx.fill(); ctx.stroke(); } }
+      // 流れてくるもの: 白菜・キャベツ。出荷フロアは 段ボール箱も
       const period = 68;
-      const shift = (t * 70) % period;
-      for (let x = b.x + 20 + shift; x < b.x + b.w - 14; x += period) {
-        if (x < left - 30 || x > right + 30) continue;
-        const k = Math.floor((x - shift - b.x) / period + b.line * 7);
-        const wob = Math.sin(k * 1.7) * 6;
+      const shift = (t * speed) % period;
+      const len = b.dir === 'v' ? b.h : b.w;
+      for (let d = 20 + shift; d < len - 14; d += period) {
+        const k = Math.floor((d - shift) / period + b.line * 7);
         if ((k * 7919) % 5 === 0) continue; // ときどき空く
-        Art.blit(ctx, spr, x, b.y + b.h / 2 + wob, 1);
+        const wob = Math.sin(k * 1.7) * 6;
+        const x = b.dir === 'v' ? b.x + b.w / 2 + wob : b.x + d;
+        const y = b.dir === 'v' ? b.y + d : b.y + b.h / 2 + wob;
+        if (x < left - 30 || x > right + 30 || y < top - 30 || y > bottom + 30) continue;
+        let kind = b.veg === 'mix' ? (k % 3 === 0 ? 'box' : k % 2 ? 'cabbage' : 'hakusai') : b.veg;
+        if (kind === 'box') Art.blit(ctx, S.boxSmall, x, y + 8, 1);
+        else Art.blit(ctx, kind === 'cabbage' ? S.cabbageSmall : S.hakusaiSmall, x, y, 1);
       }
     }
   }
 
   // ---------- 奥から手前へ描く物 ----------
   function pushDraw(y, fn) { drawList.push({ y, fn }); }
-  function drawProps(ctx, left, top, right, bottom) {
+  function drawProps(ctx, t, left, top, right, bottom) {
     const W = G.world; const S = Art.S;
     for (const r of W.rects) {
       if (r.type === 'wall' || r.type === 'belt') continue;
-      if (r.x > right + 60 || r.x + r.w < left - 60 || r.y > bottom + 120 || r.y + r.h < top - 60) continue;
+      if (r.x > right + 60 || r.x + r.w < left - 60 || r.y > bottom + 140 || r.y + r.h < top - 60) continue;
       const cx = r.x + r.w / 2; const by = r.y + r.h;
-      if (r.type === 'table') pushDraw(by - 1, () => Art.blit(ctx, S.table[W.stations.find((s) => s.x === r.x && s.y === r.y) ? W.stations.find((s) => s.x === r.x && s.y === r.y).veg : 'cabbage'], cx, by + 2, 1));
-      else if (r.type === 'boxes') pushDraw(by, () => { const n = r.n || 2; for (let i = 0; i < Math.round(r.w / 30); i++) for (let j = 0; j < n; j++) { Art.blit(ctx, S.box, r.x + 24 + i * 30 + (j % 2) * 4, by - j * 22 + (i % 2) * 2, 1); } if (r.veg) { ctx.save(); ctx.translate(r.x + 30, by - n * 22 - 10); ctx.scale(0.55, 0.55); Art.drawVeg(ctx, r.veg, 16); ctx.restore(); } });
-      else if (r.type === 'vending') pushDraw(by, () => Art.blit(ctx, S.vending, cx, by, 1));
-      else if (r.type === 'locker') pushDraw(by, () => Art.blit(ctx, S.locker, cx, by, 1));
-      else if (r.type === 'bench') pushDraw(by, () => Art.blit(ctx, S.bench, cx, by + 6, 1));
-      else if (r.type === 'pallet') pushDraw(by, () => Art.blit(ctx, S.pallet, cx, by + 8, 1));
+      switch (r.type) {
+        case 'table': {
+          const st = r.station || {};
+          const veg = st.veg === 'mix' || !st.veg ? 'cabbage' : st.veg;
+          if (st.vertical) pushDraw(by - 1, () => Art.blit(ctx, st.kind === 'pack' ? S.packV : S.tableV[veg], cx, by + 2, 1));
+          else pushDraw(by - 1, () => Art.blit(ctx, st.kind === 'pack' ? S.pack : S.table[veg], cx, by + 2, 1));
+          break;
+        }
+        case 'packIsland': pushDraw(by, () => Art.blit(ctx, S.packIsland, cx, by + 4, 1)); break;
+        case 'boxes': pushDraw(by, () => { const n = r.n || 2; for (let i = 0; i < Math.round(r.w / 30); i++) for (let j = 0; j < n; j++) { Art.blit(ctx, S.box, r.x + 24 + i * 30 + (j % 2) * 4, by - j * 22 + (i % 2) * 2, 1); } if (r.veg) { ctx.save(); ctx.translate(r.x + 30, by - n * 22 - 10); ctx.scale(0.55, 0.55); Art.drawVeg(ctx, r.veg, 16); ctx.restore(); } }); break;
+        case 'bins': pushDraw(by, () => Art.drawBins(ctx, r)); break;
+        case 'wrap': pushDraw(by, () => Art.blit(ctx, S.wrap, cx, by + 4, 1)); break;
+        case 'rack': pushDraw(by, () => Art.drawRack(ctx, r)); break;
+        case 'tank': pushDraw(by, () => Art.drawTank(ctx, r, t)); break;
+        case 'vending': pushDraw(by, () => Art.blit(ctx, S.vending, cx, by, 1)); break;
+        case 'locker': pushDraw(by, () => Art.blit(ctx, S.locker, cx, by, 1)); break;
+        case 'bench': pushDraw(by, () => Art.blit(ctx, S.bench, cx, by + 6, 1)); break;
+        case 'pallet': pushDraw(by, () => Art.blit(ctx, S.pallet, cx, by + 8, 1)); break;
+        default: break;
+      }
     }
     for (const p of G.pickups) {
       if (p.x < left - 60 || p.x > right + 60 || p.y < top - 60 || p.y > bottom + 60) continue;
@@ -2769,10 +3060,10 @@ const Render = (() => {
       if (!w.speech || w.x < left - 150 || w.x > right + 150 || w.y < top - 100 || w.y > bottom + 60) continue;
       const s = w.speech;
       const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1;
-      Art.drawBubble(ctx, w.x, w.y - 86, s.text, s.style, font, a, box);
+      Art.drawBubble(ctx, w.x, w.y - 86, s.text, s.style, font, a, Object.assign({ sideX: 28 }, box));
     }
     const B = G.boss;
-    if (B && B.speech) { const s = B.speech; const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1; Art.drawBubble(ctx, B.x, B.y - 168, s.text, s.style, `800 22px ${FONT}`, a, box); }
+    if (B && B.speech) { const s = B.speech; const a = s.t < 0.15 ? s.t / 0.15 : s.t > s.dur - 0.3 ? Math.max(0, (s.dur - s.t) / 0.3) : 1; Art.drawBubble(ctx, B.x, B.y - 168, s.text, s.style, `800 22px ${FONT}`, a, Object.assign({ sideX: 70 }, box)); }
   }
 
   // ---------- 1フレーム描く ----------
@@ -2781,17 +3072,17 @@ const Render = (() => {
     const V = G.view;
     const left = V.left; const top = V.top; const right = left + V.vw; const bottom = top + V.vh;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.fillStyle = '#9fb0c8'; ctx.fillRect(0, 0, G.canvas.width, G.canvas.height);
+    ctx.fillStyle = TH().outside; ctx.fillRect(0, 0, G.canvas.width, G.canvas.height);
     ctx.setTransform(V.zoom * V.dpr, 0, 0, V.zoom * V.dpr, 0, 0);
     const sh = G.cam.shake;
     const sx = sh > 0 ? (Math.random() - 0.5) * sh : 0; const sy = sh > 0 ? (Math.random() - 0.5) * sh : 0;
     ctx.translate(-left + sx, -top + sy);
-    drawFloor(ctx, left, top, right, bottom);
+    drawFloor(ctx, t, left, top, right, bottom);
     drawBelts(ctx, t, left, top, right, bottom);
     drawDanger(ctx, t);
     drawList.length = 0;
     drawWalls(ctx, left, top, right, bottom);
-    drawProps(ctx, left, top, right, bottom);
+    drawProps(ctx, t, left, top, right, bottom);
     drawWorkers(ctx, t, left, top, right, bottom);
     drawBossEntity(ctx, t);
     if (G.state !== 'title') drawPlayerEntity(ctx, t);
@@ -2816,9 +3107,11 @@ const Render = (() => {
     const sc = 240 / W.W;
     c.width = Math.ceil(W.W * sc); c.height = Math.ceil(W.H * sc);
     const g = c.getContext('2d');
-    g.fillStyle = '#eef1f6'; g.fillRect(0, 0, c.width, c.height);
+    const th = TH();
+    g.fillStyle = th.mini; g.fillRect(0, 0, c.width, c.height);
+    const COL = { wall: th.frame, belt: '#3a3f4c', table: '#b8c4d4', packIsland: '#b8c4d4', boxes: '#d9a86a', pallet: '#d9a86a', wrap: '#c9a27a', bins: '#3fa65a', tank: '#5ab8e6', rack: '#d0662a' };
     for (const r of W.rects) {
-      g.fillStyle = r.type === 'wall' ? '#8e9bb0' : r.type === 'belt' ? '#3a3f4c' : r.type === 'table' ? '#b8c4d4' : r.type === 'boxes' || r.type === 'pallet' ? '#d9a86a' : '#c77';
+      g.fillStyle = COL[r.type] || '#c77';
       g.fillRect(r.x * sc, r.y * sc, Math.max(1, r.w * sc), Math.max(1, r.h * sc));
     }
     miniBase = { c, sc };

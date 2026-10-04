@@ -64,7 +64,9 @@ for (let s = 0; s < 3; s++) {
     assert.strictEqual(a.rects.length, b.rects.length);
     assert.deepStrictEqual(a.rects.map((r) => [r.x, r.y, r.w, r.h]), b.rects.map((r) => [r.x, r.y, r.w, r.h]));
     const ok = (x, y) => { const cx = Math.floor(x / a.T); const cy = Math.floor(y / a.T); return !!a.reach[cy * a.gw + cx]; };
-    assert.ok(a.stations.length >= 30, '作業台が十分ある: ' + a.stations.length);
+    const stg = $(`CONFIG.stages[${s}]`);
+    assert.ok(a.stations.length >= stg.good + stg.bad.sabo + 6, '作業台が人数より十分多い: ' + a.stations.length);
+    assert.ok(a.gossipSpots.length >= Math.min(stg.bad.gossip, 3), '悪口コンビの場所が足りる');
     assert.ok(a.stations.every((st) => ok(st.sx, st.sy)), '全ての作業台の立ち位置に行ける');
     assert.ok(a.spots.every((p) => ok(p.x, p.y)), 'サボり場所に行ける');
     assert.ok(a.gossipSpots.every((p) => ok(p.x, p.y)), '悪口コンビの場所に行ける');
@@ -79,6 +81,18 @@ for (let s = 0; s < 3; s++) {
   });
 }
 function CONFIG_bad(s) { return $(`CONFIG.stages[${s}].bad.slacker`) + 1; }
+
+test('ステージが進むほど 広く・人が多く・ボスが強くなる', () => {
+  const st = $('CONFIG.stages');
+  const bad = (x) => x.bad.slacker + x.bad.gossip * 2 + x.bad.sabo;
+  for (let i = 1; i < st.length; i++) {
+    assert.ok(st[i].W * st[i].H > st[i - 1].W * st[i - 1].H, '広さ');
+    assert.ok(st[i].good > st[i - 1].good && bad(st[i]) > bad(st[i - 1]), '人数');
+    assert.ok(st[i].boss.hp > st[i - 1].boss.hp && st[i].hpMul >= st[i - 1].hpMul, '強さ');
+    assert.notStrictEqual(st[i].layout, st[i - 1].layout, '並び方がちがう');
+    assert.notStrictEqual(st[i].theme.floorA, st[i - 1].theme.floorA, '床の色がちがう');
+  }
+});
 
 test('難易度ごとの設定がそろっている', () => {
   for (const k of ['easy', 'normal', 'hard']) {

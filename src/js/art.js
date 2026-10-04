@@ -134,6 +134,72 @@ const Art = (() => {
         g.save(); g.translate(-10, -15); g.scale(0.5, 0.5); drawVeg(g, veg, 16); g.restore();
       });
     }
+    // 縦のラインの作業台(細長い)
+    S.tableV = {};
+    for (const veg of ['hakusai', 'cabbage']) {
+      S.tableV[veg] = mk(44, 84, 22, 70, (g) => {
+        shadow(g, 18, 6, 0.22, 2, 10);
+        rrect(g, -15, -60, 30, 58, 3, '#cfd6e0', 2.2);
+        g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(-12, -57, 3, 52);
+        for (const y of [0]) for (const x of [-12, 8]) rrect(g, x, y - 2, 5, 10, 1, '#9aa5b5', 1.4);
+        rrect(g, -11, -52, 22, 26, 2, '#f5e4c3', 1.6);
+        line(g, -6, -20, 6, -8, '#e8edf5', 3.2); line(g, -6, -20, 6, -8, OUT, 1.2);
+        g.save(); g.translate(0, -40); g.scale(0.5, 0.5); drawVeg(g, veg, 16); g.restore();
+      });
+    }
+    // 小さい段ボール(ベルトに流れる)
+    S.boxSmall = mk(36, 30, 18, 24, (g) => {
+      poly(g, [-13, -5, 13, -5, 13, 6, -13, 6], '#d9a86a', 1.6);
+      poly(g, [-13, -5, -9, -13, 17, -13, 13, -5], '#e9c389', 1.6);
+      poly(g, [13, -5, 17, -13, 17, -2, 13, 6], '#b9844d', 1.6);
+      g.fillStyle = '#9b6a3a'; g.fillRect(-13, -1, 26, 2);
+    });
+    // 箱詰め台: 木の台に 組み立て中の段ボールとテープ
+    const packTop = (g, w, h) => {
+      rrect(g, -w / 2, -h, w, h, 3, '#c99a62', 2.2);
+      g.fillStyle = 'rgba(255,255,255,0.25)'; g.fillRect(-w / 2 + 3, -h + 3, w - 6, 3);
+      g.strokeStyle = 'rgba(90,60,30,0.35)'; g.lineWidth = 1; for (let y = -h + 9; y < -2; y += 7) { g.beginPath(); g.moveTo(-w / 2 + 3, y); g.lineTo(w / 2 - 3, y); g.stroke(); }
+    };
+    const openBox = (g, x, y, sc) => {
+      g.save(); g.translate(x, y); g.scale(sc, sc);
+      poly(g, [-12, -6, 12, -6, 12, 8, -12, 8], '#d9a86a', 1.6);
+      poly(g, [-12, -6, -18, -14, -6, -14, 0, -6], '#e9c389', 1.4);
+      poly(g, [12, -6, 18, -14, 6, -14, 0, -6], '#e9c389', 1.4);
+      g.fillStyle = '#5a3f22'; g.fillRect(-10, -5, 20, 4);
+      g.restore();
+    };
+    const tape = (g, x, y) => { circ(g, x, y, 4.6, '#e8e2d0', 1.6); circ(g, x, y, 1.8, '#a0947a', 0); };
+    S.pack = mk(70, 56, 35, 40, (g) => {
+      shadow(g, 32, 6, 0.22, 2, 10);
+      packTop(g, 58, 30); g.translate(0, 0);
+      for (const x of [-25, 21]) rrect(g, x, 0, 5, 12, 1, '#8a6a44', 1.6);
+      g.save(); g.translate(0, -30); openBox(g, -8, 14, 0.9); tape(g, 18, 10); g.restore();
+    });
+    S.packV = mk(44, 84, 22, 70, (g) => {
+      shadow(g, 18, 6, 0.22, 2, 10);
+      g.save(); g.translate(0, -2); rrect(g, -15, -58, 30, 58, 3, '#c99a62', 2.2); g.restore();
+      for (const x of [-12, 8]) rrect(g, x, -2, 5, 10, 1, '#8a6a44', 1.4);
+      openBox(g, 0, -40, 0.75); tape(g, 0, -16);
+    });
+    S.packIsland = mk(120, 80, 60, 60, (g) => {
+      shadow(g, 54, 8, 0.25, 2, 12);
+      packTop(g, 100, 44);
+      for (const x of [-46, 40]) rrect(g, x, 0, 6, 14, 1, '#8a6a44', 1.6);
+      g.save(); g.translate(0, -44); openBox(g, -28, 20, 1); openBox(g, 6, 22, 0.9); tape(g, 34, 16); g.restore();
+      // 伝票
+      rrect(g, 20, -40, 18, 12, 1.5, '#fff', 1.2); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(23, -37, 12, 1.5); g.fillRect(23, -33, 9, 1.5);
+    });
+    // ラップで巻いた 出荷待ちパレット
+    S.wrap = mk(110, 130, 55, 118, (g) => {
+      shadow(g, 48, 9, 0.25, 2, 6);
+      rrect(g, -45, -14, 90, 14, 2, '#b58a52', 2);
+      g.fillStyle = '#8a6438'; for (const x of [-38, -6, 26]) g.fillRect(x, -10, 12, 8);
+      for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) blit(g, S.box, -30 + i * 30 + (j % 2) * 3, -16 - j * 26, 1);
+      // ラップのつや
+      g.fillStyle = 'rgba(220,240,255,0.28)'; g.fillRect(-44, -100, 90, 86);
+      g.strokeStyle = 'rgba(255,255,255,0.7)'; g.lineWidth = 2; for (let y = -96; y < -18; y += 14) { g.beginPath(); g.moveTo(-44, y); g.quadraticCurveTo(0, y + 6, 46, y - 2); g.stroke(); }
+      rrect(g, -12, -70, 26, 16, 2, '#fff', 1.4); g.fillStyle = '#c0662a'; g.fillRect(-9, -66, 20, 3); g.fillStyle = '#333'; g.fillRect(-9, -61, 14, 2);
+    });
     // ハリセン(床に落ちているもの)
     S.pick = {};
     for (const k of ['normal', 'jumbo', 'spark']) S.pick[k] = mk(90, 70, 45, 40, (g) => { shadow(g, 30, 8, 0.2, 2, 6); g.rotate(-0.5); drawHarisen(g, k, 1); });
@@ -143,6 +209,54 @@ const Art = (() => {
   function softShadow(g, rx, ry, a, ox, oy) {
     if (S.shadowBlob) { g.save(); g.globalAlpha = a / 0.5; g.drawImage(S.shadowBlob.c, ox - rx, oy - ry, rx * 2, ry * 2); g.restore(); return; }
     shadow(g, rx, ry, a, ox, oy);
+  }
+
+  // ---------- 大きさが毎回ちがう物 ----------
+  // 緑のコンテナを積んだ山(キャベツ入り)
+  function drawBins(g, r) {
+    const n = r.n || 2;
+    const cols = Math.max(1, Math.round(r.w / 46));
+    shadow(g, r.w / 2 + 4, 7, 0.22, r.x + r.w / 2, r.y + r.h + 2);
+    for (let i = 0; i < cols; i++) for (let j = 0; j < n; j++) {
+      const x = r.x + 2 + i * 46 + (j % 2) * 3; const y = r.y + r.h - 26 - j * 22;
+      rrect(g, x, y, 42, 24, 3, j % 2 ? '#3fa65a' : '#4cbf68', 2);
+      g.fillStyle = 'rgba(20,70,30,0.45)'; for (let k = 0; k < 4; k++) g.fillRect(x + 5 + k * 9, y + 7, 5, 10);
+      if (j === n - 1) for (let k = 0; k < 2; k++) { g.save(); g.translate(x + 12 + k * 18, y - 3); g.scale(0.45, 0.45); drawCabbage(g, 16); g.restore(); }
+    }
+  }
+  // 背の高い棚(オレンジの柱・段ボールの段)
+  function drawRack(g, r) {
+    const H = 104; const x0 = r.x; const x1 = r.x + r.w; const yb = r.y + r.h;
+    shadow(g, r.w / 2 + 6, 9, 0.28, r.x + r.w / 2, yb + 2);
+    g.fillStyle = 'rgba(60,40,20,0.15)'; g.fillRect(x0, yb - H, r.w, H);
+    const rnd = mulberry32(Math.round(r.x * 7 + r.y));
+    for (let lv = 0; lv < 3; lv++) {
+      const y = yb - 8 - lv * 34;
+      for (let x = x0 + 26; x < x1 - 14; x += 34) { if (rnd() < 0.18) continue; blit(g, S.box, x, y, 0.9); }
+      rrect(g, x0, y - 2, r.w, 6, 1, '#2f6fb8', 1.6);
+    }
+    for (let x = x0; x <= x1 - 8; x += Math.max(60, (r.w - 8) / Math.max(1, Math.round(r.w / 120)))) rrect(g, x, yb - H - 6, 8, H + 6, 1.5, '#e07a2a', 1.8);
+    rrect(g, x1 - 8, yb - H - 6, 8, H + 6, 1.5, '#e07a2a', 1.8);
+  }
+  // 洗浄タンク: 水の中でキャベツが ぷかぷか
+  function drawTank(g, r, t) {
+    shadow(g, r.w / 2 + 6, 8, 0.28, r.x + r.w / 2, r.y + r.h + 2);
+    rrect(g, r.x - 6, r.y - 18, r.w + 12, r.h + 18, 10, '#b9c3cf', 2.6);
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.fillRect(r.x - 2, r.y - 14, r.w + 4, 4);
+    g.save(); rrect(g, r.x + 4, r.y - 10, r.w - 8, r.h - 6, 8, null, 0); g.clip();
+    const gr = g.createLinearGradient(0, r.y - 10, 0, r.y + r.h); gr.addColorStop(0, '#9fdcf5'); gr.addColorStop(1, '#3f9fd8');
+    g.fillStyle = gr; g.fillRect(r.x, r.y - 12, r.w, r.h + 8);
+    for (let i = 0; i < 5; i++) {
+      const x = r.x + 18 + ((i * 29 + t * 18) % (r.w - 30)); const y = r.y + 10 + (i % 2) * 28 + Math.sin(t * 2 + i) * 4;
+      g.save(); g.translate(x, y); g.rotate(Math.sin(t + i) * 0.3); g.scale(0.62, 0.62); drawCabbage(g, 16); g.restore();
+    }
+    g.strokeStyle = 'rgba(255,255,255,0.6)'; g.lineWidth = 2;
+    for (let i = 0; i < 4; i++) { const y = r.y + ((t * 20 + i * 22) % (r.h - 6)); g.beginPath(); g.moveTo(r.x + 10, y); g.quadraticCurveTo(r.x + r.w / 2, y + 4, r.x + r.w - 10, y); g.stroke(); }
+    for (let i = 0; i < 6; i++) { const bx = r.x + 12 + ((i * 37) % (r.w - 24)); const by2 = r.y + r.h - 10 - ((t * 30 + i * 13) % (r.h - 10)); circ(g, bx, by2, 2.2, 'rgba(255,255,255,0.7)', 0); }
+    g.restore();
+    rrect(g, r.x + 4, r.y - 10, r.w - 8, r.h - 6, 8, null, 2.2);
+    // 出口の じょうご(ベルトへ落ちる)
+    poly(g, [r.x + r.w / 2 - 26, r.y + r.h - 4, r.x + r.w / 2 + 26, r.y + r.h - 4, r.x + r.w / 2 + 14, r.y + r.h + 18, r.x + r.w / 2 - 14, r.y + r.h + 18], '#a9b4c2', 2);
   }
 
   // ---------- ハリセン ----------
@@ -584,7 +698,12 @@ const Art = (() => {
     const h = lh * lines.length + pad * 1.2;
     w += pad * 2.2;
     if (box) {
-      if (y - h - 8 < box.top) y = box.top + h + 8;
+      // 上にはみ出すときは下げる。下げると顔に重なるので、そのぶん横へよける
+      if (y - h - 8 < box.top) {
+        const ny = box.top + h + 8;
+        if (box.sideX && ny - y > 20) { const dir = x + box.sideX + w < box.right ? 1 : -1; x += dir * (box.sideX + w / 2); }
+        y = ny;
+      }
       x = clamp(x, box.left + w / 2 + 8, box.right - w / 2 - 8);
     }
     const bx = x - w / 2; const by = y - h;
@@ -620,5 +739,5 @@ const Art = (() => {
     SC = sc;
     buildProps();
   }
-  return { init, S, OUT, SUIT, GLOVE, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
+  return { init, S, OUT, SUIT, GLOVE, drawBins, drawRack, drawTank, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
 })();
