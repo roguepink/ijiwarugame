@@ -70,6 +70,14 @@ python3 -m http.server 8000
 # → http://localhost:8000/ を開く
 ```
 
+## 人に送る・スマホのアプリにする
+
+- **GitHub Pages で公開**: リポジトリの Settings → Pages → Branch をこのブランチ / root にすると、`https://roguepink.github.io/ijiwarugame/` で遊べます。
+  URL を LINE などで送れば そのまま遊べます。ホーム画面に追加すると アプリのように全画面・横向きで遊べ、オフラインでも起動します(`manifest.webmanifest`・`sw.js`・`icons/`)。
+  - iPhone: Safari で開く → 共有 → 「ホーム画面に追加」
+  - Android: Chrome で開く → メニュー → 「アプリをインストール」/「ホーム画面に追加」
+- **ファイルで送る**: `index.html` 1枚だけで動くので、このファイルを送れば相手はダブルクリックで遊べます。
+
 ## つくり
 
 画像・音声ファイルや外部ライブラリは使っていません。絵はすべて Canvas のパスで描き、効果音とBGMは WebAudio で合成しています。

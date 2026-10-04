@@ -354,6 +354,10 @@ function boot() {
   if (/[?&]debug/.test(location.search)) window.__harisen = { G, CONFIG, perf, Art, Render, workerEyes, workerPose, startGame, endGame, stageClear, resetGame, setPaused, step, swing, hitWorker, hitBoss, spawnBoss, reform, relapse, makeWorker, moveBody, findPath, toTitle, showResult, Sound, Input };
 
   requestAnimationFrame(loop);
+  // ホーム画面に追加・オフラインで起動できるように(https で公開したときだけ)
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    window.addEventListener('load', () => { try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) { /* 無視 */ } });
+  }
 }
 
 boot();
