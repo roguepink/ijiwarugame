@@ -104,8 +104,16 @@ body.touch canvas#game { cursor: default; }
 #touchHints { display: none; }
 body.touch #touchHints.show { display: block; }
 .th { position: fixed; bottom: calc(60px + var(--safe-b)); width: 130px; height: 130px; border-radius: 50%; border: 4px dashed rgba(47, 42, 58, 0.45); display: grid; place-items: center; text-align: center; font-size: 17px; color: var(--ink); background: rgba(255, 255, 255, 0.3); pointer-events: none; animation: breathe 1.4s infinite alternate; }
-.th.l { left: calc(40px + var(--safe-l)); }
-.th.r { right: calc(40px + var(--safe-r)); }
+.th.l { left: calc(64px + var(--safe-l)); }
+.th.r { right: calc(64px + var(--safe-r)); }
+/* 画面の左右のはし(さわっても反応しない場所)。スマホのときだけ うすく見せる */
+.edge-guard { display: none; position: fixed; top: 0; bottom: 0; width: 22px; pointer-events: none; z-index: 4; background: repeating-linear-gradient(45deg, rgba(47, 42, 58, 0.07) 0 6px, rgba(47, 42, 58, 0) 6px 12px); transition: background-color 0.2s; }
+.edge-guard.l { left: 0; border-right: 2px dashed rgba(47, 42, 58, 0.18); }
+.edge-guard.r { right: 0; border-left: 2px dashed rgba(47, 42, 58, 0.18); }
+body.touch .edge-guard { display: block; }
+body.touch.edge-flash .edge-guard { background-color: rgba(255, 120, 80, 0.35); }
+.pause-msg { margin: 0 0 6px; font-size: 16px; line-height: 1.55; color: var(--purple); }
+.pause-msg b { color: var(--red); }
 .th.gone { display: none; }
 @keyframes breathe { from { transform: scale(0.96); } to { transform: scale(1.04); } }
 
@@ -272,6 +280,7 @@ body.touch .controls .touch-only { display: block; }
 <div id="stickL" class="stick hidden"><div class="ring"></div><div class="knob"></div></div>
 <div id="stickR" class="stick right hidden"><div class="ring"></div><div class="knob"></div></div>
 
+<div id="edgeL" class="edge-guard l"></div><div id="edgeR" class="edge-guard r"></div>
 <div id="touchHints"><div class="th l" id="thL">左で<br>うごく</div><div class="th r" id="thR">右で ねらって<br>たたく</div></div>
 
 <div id="toast" class="hidden"></div>
@@ -334,6 +343,7 @@ body.touch .controls .touch-only { display: block; }
 <div id="pause" class="overlay hidden">
   <div class="card small">
     <h2>ポーズ</h2>
+    <p id="pauseMsg" class="pause-msg hidden"></p>
     <button id="btnResume" class="big-btn">つづける</button>
     <button id="btnQuit" class="sub-btn">タイトルへ</button>
   </div>
@@ -1581,9 +1591,14 @@ const Art = (() => {
     ctx.restore();
   }
 
+  // 画面の大きさが変わるたびに全部描き直すと重いので、倍率ごとに作った絵を取っておいて使い回す
+  const cache = new Map();
   function init(sc) {
     SC = sc;
+    if (cache.has(sc)) { for (const k of Object.keys(S)) delete S[k]; Object.assign(S, cache.get(sc)); return; }
+    for (const k of Object.keys(S)) delete S[k];
     buildProps();
+    cache.set(sc, Object.assign({}, S));
   }
   return { init, S, OUT, SUIT, GLOVE, drawBins, drawRack, drawTank, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
 })();
@@ -1606,7 +1621,7 @@ const Sound = (() => {
   try { muted = localStorage.getItem('harisen_mute') === '1'; } catch (e) { /* 保存できなくても遊べる */ }
 
   function init() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== 'running' && ctx.state !== 'closed') { try { ctx.resume().catch(() => {}); } catch (e) { /* 無視 */ } } return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try {
@@ -1748,6 +1763,8 @@ const Input = (() => {
   const mouse = { x: 0, y: 0, down: false, seen: false };
   const stick = { L: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, R: { id: null, ox: 0, oy: 0, x: 0, y: 0 } };
   const STICK_R = 54;
+  // 画面の左右のはし: ここから始まるタッチは スマホの「戻る」操作に横取りされやすいので、ゲームでは使わない
+  const EDGE = 22;
   let doms = {};
   let touchUsed = false;
   let lastAim = -Math.PI / 2;
@@ -1796,9 +1813,12 @@ const Input = (() => {
         return;
       }
       touchUsed = true;
+      if (e.clientX < EDGE || e.clientX > window.innerWidth - EDGE) { if (hooks.onEdge) hooks.onEdge(); return; }
       const side = e.clientX < window.innerWidth * 0.5 ? 'L' : 'R';
       const s = stick[side];
-      if (s.id !== null) return;
+      // 同じがわに もう指があることになっていても、新しい指を優先する
+      // (前の指を スマホの操作に横取りされて「はなした」が届かなかった場合に、固まったままにしないため)
+      if (s.id !== null && s.id !== e.pointerId) { try { canvas.releasePointerCapture(s.id); } catch (err) { /* 無視 */ } }
       s.id = e.pointerId; s.ox = s.x = e.clientX; s.oy = s.y = e.clientY;
       try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 無視 */ }
       setStickDom(side, true);
@@ -1822,6 +1842,12 @@ const Input = (() => {
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
     canvas.addEventListener('lostpointercapture', up);
+    // 画面から指がぜんぶ はなれたら、届かなかった「はなした」があっても 必ず両方のスティックを はなす
+    const allUp = (e) => { if (!e.touches || e.touches.length === 0) releaseAll(); };
+    window.addEventListener('touchend', allUp, { passive: true });
+    window.addEventListener('touchcancel', allUp, { passive: true });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); mouse.down = false; releaseAll(); } });
+    window.addEventListener('pagehide', () => { keys.clear(); mouse.down = false; releaseAll(); });
   }
 
   function releaseAll() {
@@ -1866,7 +1892,7 @@ const Input = (() => {
     return { angle: lastAim, fire: fireKey, touch: false };
   }
 
-  return { attach, move, aim, releaseAll, isTouch: () => touchUsed, setLastAim: (a) => { lastAim = a; } };
+  return { attach, move, aim, releaseAll, sticks: () => ({ L: stick.L.id, R: stick.R.id }), isTouch: () => touchUsed, setLastAim: (a) => { lastAim = a; } };
 })();
 
 /* ---- js/entities.js ---- */
@@ -2648,14 +2674,18 @@ const Render = (() => {
   let fxLast = { r: -1, b: -1 };
   let miniBase = null;
   const drawList = [];
+  let lastSizeKey = '';
 
   // ---------- 初期化・リサイズ ----------
-  function resize() {
+  function resize(force) {
     const canvas = G.canvas;
     const W = window.innerWidth;
     const H = window.innerHeight;
     let dpr = Math.min(window.devicePixelRatio || 1, CONFIG.view.maxDpr) * (G.rs || 1);
     while (W * H * dpr * dpr > CONFIG.view.maxPixels && dpr > 0.5) dpr *= 0.9;
+    const key = W + 'x' + H + '@' + dpr;
+    if (!force && key === lastSizeKey) return;
+    lastSizeKey = key;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     canvas.style.width = W + 'px';
@@ -2675,7 +2705,7 @@ const Render = (() => {
     const cur = G.rs || 1;
     if (cur <= 0.6) return false;
     G.rs = Math.max(0.6, cur - 0.15);
-    resize();
+    resize(true);
     return true;
   }
 
@@ -3236,6 +3266,7 @@ function startGame(stage) {
   clearTimeout(G.thTimer);
   G.thTimer = setTimeout(() => UI.el.touchHints.classList.remove('show'), 12000);
   requestWakeLock();
+  armBackGuard();
   Render.buildMini();
   G.cam.x = G.player.x; G.cam.y = G.player.y - 60;
 }
@@ -3326,9 +3357,51 @@ function setPaused(p) {
   G.paused = p;
   UI.show('pause', p);
   if (p) Input.releaseAll();
+  else { $('pauseMsg').classList.add('hidden'); armBackGuard(); }
+}
+// 画面のはしの操作などで止めたときは、なぜ止まったかをポーズ画面に書く
+function pauseFor(reason) {
+  if (G.state !== 'playing') return;
+  const msg = $('pauseMsg');
+  if (reason === 'back') msg.innerHTML = '画面の はしを さわって 「もどる」に なりかけたので<br>とめました。<b>「つづける」</b>で そのまま あそべます';
+  else msg.innerHTML = 'ゲームの 画面が うしろに かくれたので とめました。<br><b>「つづける」</b>で そのまま あそべます';
+  msg.classList.remove('hidden');
+  setPaused(true);
+}
+
+// ---------- 「戻る」対策 ----------
+// ゲーム中は ブラウザの履歴に 目印を1つ積んでおく。端をさわって「戻る」になっても、
+// その目印が消えるだけで ページは このまま。ゲームを止めて、次にさわったときに 目印を積みなおす。
+// (ブラウザは さわっていないときに積んだ目印を「戻る」で飛ばすことがあるので、積むのは必ず さわったとき)
+let backGuardArmed = false;
+function armBackGuard() {
+  if (backGuardArmed || G.state === 'title') return;
+  try { history.pushState({ harisen: 1 }, ''); backGuardArmed = true; } catch (e) { /* 使えない場所では なにもしない */ }
+}
+function setupBackGuard() {
+  window.addEventListener('popstate', () => {
+    if (!backGuardArmed) return;
+    backGuardArmed = false;
+    if (G.state === 'title') return; // タイトルでは ふつうに戻れる
+    Input.releaseAll();
+    pauseFor('back');
+  });
+  // さわったとき・キーを押したときに、目印が消えていたら積みなおす
+  const rearm = () => { if (!backGuardArmed && G.state !== 'title') armBackGuard(); };
+  window.addEventListener('pointerup', rearm, true);
+  window.addEventListener('keydown', rearm, true);
 }
 
 // ---------- スマホ向けの補助 ----------
+// 画面のはしをさわったら、はしが「さわらない場所」だと 一瞬ひからせて知らせる
+let edgeTimer = 0;
+function showEdgeGuard() {
+  if (G.state !== 'playing') return;
+  document.body.classList.add('edge-flash');
+  clearTimeout(edgeTimer);
+  edgeTimer = setTimeout(() => document.body.classList.remove('edge-flash'), 700);
+  if (!G.edgeTold) { G.edgeTold = true; UI.toast('画面の いちばん はしは スマホの「もどる」に なりやすいので、すこし 内がわを さわってね', 3400); }
+}
 let wakeLock = null;
 function requestWakeLock() {
   try {
@@ -3453,6 +3526,7 @@ function boot() {
       }
     },
     onStick(side) { UI.el[side === 'L' ? 'thL' : 'thR'].classList.add('gone'); },
+    onEdge() { showEdgeGuard(); },
     onFirstInput() { Sound.init(); if (Input.isTouch()) document.body.classList.add('touch'); },
   });
 
@@ -3487,10 +3561,16 @@ function boot() {
   }));
   refreshTitle();
 
-  window.addEventListener('resize', () => { Render.resize(); });
-  window.addEventListener('orientationchange', () => setTimeout(() => Render.resize(), 200));
-  document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); else if (G.state === 'playing') requestWakeLock(); });
-  window.addEventListener('blur', () => { if (G.state === 'playing') setPaused(true); });
+  // スマホのツールバーの出入りで 何度も続けて大きさが変わるので、落ち着いてから1回だけ合わせる
+  let resizeTimer = 0;
+  const queueResize = (ms) => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => Render.resize(), ms); };
+  window.addEventListener('resize', () => queueResize(150));
+  window.addEventListener('orientationchange', () => queueResize(300));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseFor('hidden'); else { if (G.state === 'playing') requestWakeLock(); Sound.init(); } });
+  window.addEventListener('blur', () => pauseFor('hidden'));
+  // 「戻る」をしたあと、ページがそのまま戻ってきた(前に進む・アプリにもどる)とき
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { lastTs = 0; Input.releaseAll(); pauseFor('hidden'); queueResize(50); } });
+  setupBackGuard();
 
   // 動作確認用: URL に ?debug を付けるとコンソールから状態を触れる
   if (/[?&]debug/.test(location.search)) window.__harisen = { G, CONFIG, perf, Art, Render, workerEyes, workerPose, startGame, endGame, stageClear, resetGame, setPaused, step, swing, hitWorker, hitBoss, spawnBoss, reform, relapse, makeWorker, moveBody, findPath, toTitle, showResult, Sound, Input };

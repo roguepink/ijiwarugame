@@ -15,7 +15,7 @@ const Sound = (() => {
   try { muted = localStorage.getItem('harisen_mute') === '1'; } catch (e) { /* 保存できなくても遊べる */ }
 
   function init() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state !== 'running' && ctx.state !== 'closed') { try { ctx.resume().catch(() => {}); } catch (e) { /* 無視 */ } } return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     try {

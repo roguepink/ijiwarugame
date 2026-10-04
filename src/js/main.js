@@ -95,6 +95,7 @@ function startGame(stage) {
   clearTimeout(G.thTimer);
   G.thTimer = setTimeout(() => UI.el.touchHints.classList.remove('show'), 12000);
   requestWakeLock();
+  armBackGuard();
   Render.buildMini();
   G.cam.x = G.player.x; G.cam.y = G.player.y - 60;
 }
@@ -185,9 +186,51 @@ function setPaused(p) {
   G.paused = p;
   UI.show('pause', p);
   if (p) Input.releaseAll();
+  else { $('pauseMsg').classList.add('hidden'); armBackGuard(); }
+}
+// 画面のはしの操作などで止めたときは、なぜ止まったかをポーズ画面に書く
+function pauseFor(reason) {
+  if (G.state !== 'playing') return;
+  const msg = $('pauseMsg');
+  if (reason === 'back') msg.innerHTML = '画面の はしを さわって 「もどる」に なりかけたので<br>とめました。<b>「つづける」</b>で そのまま あそべます';
+  else msg.innerHTML = 'ゲームの 画面が うしろに かくれたので とめました。<br><b>「つづける」</b>で そのまま あそべます';
+  msg.classList.remove('hidden');
+  setPaused(true);
+}
+
+// ---------- 「戻る」対策 ----------
+// ゲーム中は ブラウザの履歴に 目印を1つ積んでおく。端をさわって「戻る」になっても、
+// その目印が消えるだけで ページは このまま。ゲームを止めて、次にさわったときに 目印を積みなおす。
+// (ブラウザは さわっていないときに積んだ目印を「戻る」で飛ばすことがあるので、積むのは必ず さわったとき)
+let backGuardArmed = false;
+function armBackGuard() {
+  if (backGuardArmed || G.state === 'title') return;
+  try { history.pushState({ harisen: 1 }, ''); backGuardArmed = true; } catch (e) { /* 使えない場所では なにもしない */ }
+}
+function setupBackGuard() {
+  window.addEventListener('popstate', () => {
+    if (!backGuardArmed) return;
+    backGuardArmed = false;
+    if (G.state === 'title') return; // タイトルでは ふつうに戻れる
+    Input.releaseAll();
+    pauseFor('back');
+  });
+  // さわったとき・キーを押したときに、目印が消えていたら積みなおす
+  const rearm = () => { if (!backGuardArmed && G.state !== 'title') armBackGuard(); };
+  window.addEventListener('pointerup', rearm, true);
+  window.addEventListener('keydown', rearm, true);
 }
 
 // ---------- スマホ向けの補助 ----------
+// 画面のはしをさわったら、はしが「さわらない場所」だと 一瞬ひからせて知らせる
+let edgeTimer = 0;
+function showEdgeGuard() {
+  if (G.state !== 'playing') return;
+  document.body.classList.add('edge-flash');
+  clearTimeout(edgeTimer);
+  edgeTimer = setTimeout(() => document.body.classList.remove('edge-flash'), 700);
+  if (!G.edgeTold) { G.edgeTold = true; UI.toast('画面の いちばん はしは スマホの「もどる」に なりやすいので、すこし 内がわを さわってね', 3400); }
+}
 let wakeLock = null;
 function requestWakeLock() {
   try {
@@ -312,6 +355,7 @@ function boot() {
       }
     },
     onStick(side) { UI.el[side === 'L' ? 'thL' : 'thR'].classList.add('gone'); },
+    onEdge() { showEdgeGuard(); },
     onFirstInput() { Sound.init(); if (Input.isTouch()) document.body.classList.add('touch'); },
   });
 
@@ -346,10 +390,16 @@ function boot() {
   }));
   refreshTitle();
 
-  window.addEventListener('resize', () => { Render.resize(); });
-  window.addEventListener('orientationchange', () => setTimeout(() => Render.resize(), 200));
-  document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); else if (G.state === 'playing') requestWakeLock(); });
-  window.addEventListener('blur', () => { if (G.state === 'playing') setPaused(true); });
+  // スマホのツールバーの出入りで 何度も続けて大きさが変わるので、落ち着いてから1回だけ合わせる
+  let resizeTimer = 0;
+  const queueResize = (ms) => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => Render.resize(), ms); };
+  window.addEventListener('resize', () => queueResize(150));
+  window.addEventListener('orientationchange', () => queueResize(300));
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pauseFor('hidden'); else { if (G.state === 'playing') requestWakeLock(); Sound.init(); } });
+  window.addEventListener('blur', () => pauseFor('hidden'));
+  // 「戻る」をしたあと、ページがそのまま戻ってきた(前に進む・アプリにもどる)とき
+  window.addEventListener('pageshow', (e) => { if (e.persisted) { lastTs = 0; Input.releaseAll(); pauseFor('hidden'); queueResize(50); } });
+  setupBackGuard();
 
   // 動作確認用: URL に ?debug を付けるとコンソールから状態を触れる
   if (/[?&]debug/.test(location.search)) window.__harisen = { G, CONFIG, perf, Art, Render, workerEyes, workerPose, startGame, endGame, stageClear, resetGame, setPaused, step, swing, hitWorker, hitBoss, spawnBoss, reform, relapse, makeWorker, moveBody, findPath, toTitle, showResult, Sound, Input };

@@ -72,6 +72,12 @@ python3 -m http.server 8000
 # → http://localhost:8000/ を開く
 ```
 
+## スマホで画面のはしをさわったとき
+
+- 画面の左右のいちばん はし(うすい しまもようの所)は、スマホの「戻る」操作に なりやすいので ゲームでは使いません。
+- はしをさわって「戻る」になっても、ページは そのままで ゲームが ポーズになります。「つづける」で続きから遊べます(タイトル画面では ふつうに戻れます)。
+- 指が はしから画面の外へ抜けても、キャラクターが歩き続けたり ハリセンを振り続けたりしないようにしてあります。
+
 ## 人に送る・スマホのアプリにする
 
 - **GitHub Pages で公開**: リポジトリの Settings → Pages → Branch をこのブランチ / root にすると、`https://roguepink.github.io/ijiwarugame/` で遊べます。
@@ -116,6 +122,7 @@ tests/            ルール・マップ・ビルド・ブラウザ通しプレ�
 node tests/logic.test.js                      # ルール・当たり・マップ
 node tests/build.test.js                      # 1ファイル版が最新か
 NODE_PATH=$(npm root -g) node tests/browser.test.js   # Chromium で起動し、ボットがステージ1をクリアするまで
+NODE_PATH=$(npm root -g) node tests/touch.test.js     # スマホの画面で、はしの操作・「戻る」・画面の大きさの変化に強いか
 ```
 
 URL のおわりに `?debug` をつけると、ブラウザのコンソールから `__harisen` でゲームの状態をのぞけます(動作確認用)。

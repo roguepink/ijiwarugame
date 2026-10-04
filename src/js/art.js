@@ -735,9 +735,14 @@ const Art = (() => {
     ctx.restore();
   }
 
+  // 画面の大きさが変わるたびに全部描き直すと重いので、倍率ごとに作った絵を取っておいて使い回す
+  const cache = new Map();
   function init(sc) {
     SC = sc;
+    if (cache.has(sc)) { for (const k of Object.keys(S)) delete S[k]; Object.assign(S, cache.get(sc)); return; }
+    for (const k of Object.keys(S)) delete S[k];
     buildProps();
+    cache.set(sc, Object.assign({}, S));
   }
   return { init, S, OUT, SUIT, GLOVE, drawBins, drawRack, drawTank, drawWorker, drawPlayer, drawBoss, drawHarisen, drawBubble, drawVeg, drawCabbage, drawHakusai, drawTone, drawHoodHead, blit, mk, rrect, circ, ell, star, poly, fillStroke, softShadow, line };
 })();

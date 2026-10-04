@@ -90,8 +90,16 @@ body.touch canvas#game { cursor: default; }
 #touchHints { display: none; }
 body.touch #touchHints.show { display: block; }
 .th { position: fixed; bottom: calc(60px + var(--safe-b)); width: 130px; height: 130px; border-radius: 50%; border: 4px dashed rgba(47, 42, 58, 0.45); display: grid; place-items: center; text-align: center; font-size: 17px; color: var(--ink); background: rgba(255, 255, 255, 0.3); pointer-events: none; animation: breathe 1.4s infinite alternate; }
-.th.l { left: calc(40px + var(--safe-l)); }
-.th.r { right: calc(40px + var(--safe-r)); }
+.th.l { left: calc(64px + var(--safe-l)); }
+.th.r { right: calc(64px + var(--safe-r)); }
+/* 画面の左右のはし(さわっても反応しない場所)。スマホのときだけ うすく見せる */
+.edge-guard { display: none; position: fixed; top: 0; bottom: 0; width: 22px; pointer-events: none; z-index: 4; background: repeating-linear-gradient(45deg, rgba(47, 42, 58, 0.07) 0 6px, rgba(47, 42, 58, 0) 6px 12px); transition: background-color 0.2s; }
+.edge-guard.l { left: 0; border-right: 2px dashed rgba(47, 42, 58, 0.18); }
+.edge-guard.r { right: 0; border-left: 2px dashed rgba(47, 42, 58, 0.18); }
+body.touch .edge-guard { display: block; }
+body.touch.edge-flash .edge-guard { background-color: rgba(255, 120, 80, 0.35); }
+.pause-msg { margin: 0 0 6px; font-size: 16px; line-height: 1.55; color: var(--purple); }
+.pause-msg b { color: var(--red); }
 .th.gone { display: none; }
 @keyframes breathe { from { transform: scale(0.96); } to { transform: scale(1.04); } }
 

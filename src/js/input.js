@@ -8,6 +8,8 @@ const Input = (() => {
   const mouse = { x: 0, y: 0, down: false, seen: false };
   const stick = { L: { id: null, ox: 0, oy: 0, x: 0, y: 0 }, R: { id: null, ox: 0, oy: 0, x: 0, y: 0 } };
   const STICK_R = 54;
+  // 画面の左右のはし: ここから始まるタッチは スマホの「戻る」操作に横取りされやすいので、ゲームでは使わない
+  const EDGE = 22;
   let doms = {};
   let touchUsed = false;
   let lastAim = -Math.PI / 2;
@@ -56,9 +58,12 @@ const Input = (() => {
         return;
       }
       touchUsed = true;
+      if (e.clientX < EDGE || e.clientX > window.innerWidth - EDGE) { if (hooks.onEdge) hooks.onEdge(); return; }
       const side = e.clientX < window.innerWidth * 0.5 ? 'L' : 'R';
       const s = stick[side];
-      if (s.id !== null) return;
+      // 同じがわに もう指があることになっていても、新しい指を優先する
+      // (前の指を スマホの操作に横取りされて「はなした」が届かなかった場合に、固まったままにしないため)
+      if (s.id !== null && s.id !== e.pointerId) { try { canvas.releasePointerCapture(s.id); } catch (err) { /* 無視 */ } }
       s.id = e.pointerId; s.ox = s.x = e.clientX; s.oy = s.y = e.clientY;
       try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* 無視 */ }
       setStickDom(side, true);
@@ -82,6 +87,12 @@ const Input = (() => {
     canvas.addEventListener('pointerup', up);
     canvas.addEventListener('pointercancel', up);
     canvas.addEventListener('lostpointercapture', up);
+    // 画面から指がぜんぶ はなれたら、届かなかった「はなした」があっても 必ず両方のスティックを はなす
+    const allUp = (e) => { if (!e.touches || e.touches.length === 0) releaseAll(); };
+    window.addEventListener('touchend', allUp, { passive: true });
+    window.addEventListener('touchcancel', allUp, { passive: true });
+    document.addEventListener('visibilitychange', () => { if (document.hidden) { keys.clear(); mouse.down = false; releaseAll(); } });
+    window.addEventListener('pagehide', () => { keys.clear(); mouse.down = false; releaseAll(); });
   }
 
   function releaseAll() {
@@ -126,5 +137,5 @@ const Input = (() => {
     return { angle: lastAim, fire: fireKey, touch: false };
   }
 
-  return { attach, move, aim, releaseAll, isTouch: () => touchUsed, setLastAim: (a) => { lastAim = a; } };
+  return { attach, move, aim, releaseAll, sticks: () => ({ L: stick.L.id, R: stick.R.id }), isTouch: () => touchUsed, setLastAim: (a) => { lastAim = a; } };
 })();

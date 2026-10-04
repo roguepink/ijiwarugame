@@ -11,14 +11,18 @@ const Render = (() => {
   let fxLast = { r: -1, b: -1 };
   let miniBase = null;
   const drawList = [];
+  let lastSizeKey = '';
 
   // ---------- 初期化・リサイズ ----------
-  function resize() {
+  function resize(force) {
     const canvas = G.canvas;
     const W = window.innerWidth;
     const H = window.innerHeight;
     let dpr = Math.min(window.devicePixelRatio || 1, CONFIG.view.maxDpr) * (G.rs || 1);
     while (W * H * dpr * dpr > CONFIG.view.maxPixels && dpr > 0.5) dpr *= 0.9;
+    const key = W + 'x' + H + '@' + dpr;
+    if (!force && key === lastSizeKey) return;
+    lastSizeKey = key;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     canvas.style.width = W + 'px';
@@ -38,7 +42,7 @@ const Render = (() => {
     const cur = G.rs || 1;
     if (cur <= 0.6) return false;
     G.rs = Math.max(0.6, cur - 0.15);
-    resize();
+    resize(true);
     return true;
   }
 
