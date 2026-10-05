@@ -29,7 +29,7 @@ test('単体HTML: 中のスクリプトが構文として正しい', () => {
   const scripts = inlineScripts(standalone);
   assert.strictEqual(scripts.length, 1);
   new vm.Script(scripts[0]);
-  for (const f of ['util', 'config', 'world', 'art', 'audio', 'input', 'entities', 'render', 'main']) assert.ok(scripts[0].includes(`---- js/${f}.js ----`), f);
+  for (const f of ['util', 'config', 'world', 'art', 'audio', 'input', 'entities', 'render', 'whack', 'main']) assert.ok(scripts[0].includes(`---- js/${f}.js ----`), f);
 });
 
 test('公開ページ用: <html>/<head>/<body> を含まず、先頭に title とスタイルがある', () => {

@@ -97,6 +97,17 @@ const Sound = (() => {
     click() { tone(700, 0.06, 'square', 0.04); },
     gauge() { tone(1046, 0.08, 'sine', 0.06, 1568); },
     dizzy() { for (let i = 0; i < 3; i++) tone(700 + i * 100, 0.1, 'sine', 0.04, 500, i * 0.1); },
+    // ---- おばさんたたき ----
+    pop() { tone(180, 0.14, 'sine', 0.1, 420); noise(0.08, 0.05, 1500, 'bandpass'); },                    // ニョキッ
+    peek() { tone(900, 0.06, 'sine', 0.05, 1300); },
+    poof() { noise(0.25, 0.14, 900, 'lowpass'); tone(300, 0.2, 'sine', 0.06, 90); },
+    whiff() { noise(0.08, 0.05, 2200, 'bandpass', 0, 1.2); },                                           // スカッ
+    ouchy(n) { const k = Math.pow(1.03, Math.min(n || 0, 14)); tone(620 * k, 0.09, 'square', 0.06, 900 * k); tone(760 * k, 0.12, 'triangle', 0.05, 380 * k, 0.07); }, // 「いたっ」
+    sorry() { [523, 494, 440, 392].forEach((f, i) => tone(f, 0.16, 'triangle', 0.09, null, i * 0.1)); tone(330, 0.5, 'sine', 0.07, null, 0.4); }, // 「ごめんなさい…」
+    sorryTiny(i) { const f = [392, 440, 494, 523, 587][(i || 0) % 5]; tone(f, 0.08, 'triangle', 0.05, f * 0.8); },
+    bigPop() { noise(0.6, 0.18, 300, 'lowpass'); tone(60, 0.8, 'sawtooth', 0.16, 35); [110, 104, 98].forEach((f, i) => tone(f, 0.4, 'square', 0.06, null, i * 0.2)); },
+    whistle() { tone(1800, 0.35, 'sine', 0.1, 2400); tone(1800, 0.5, 'sine', 0.1, 2400, 0.4); tone(2600, 0.7, 'sine', 0.08, 1500, 0.95); }, // 終了のホイッスル
+    countdown(last) { tone(last ? 1046 : 660, last ? 0.5 : 0.14, 'square', 0.07); },
   };
 
   // ---- BGM: 工場っぽい、きざむリズムのループ ----
@@ -117,7 +128,21 @@ const Sound = (() => {
     const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
     s.connect(f); f.connect(g); g.connect(bgmGain); s.start(t); s.stop(t + 0.08);
   }
+  // おばさんたたき: 低くて いかにも悪そうな、のっしのっしと歩くようなループ(短調・増4度)
+  const VIL_BASS = [0, 0, 6, 0, -2, 0, 6, 5, 0, 0, 6, 0, -2, -1, 0, 0];     // C C F# C Bb C F# F ...
+  const VIL_MEL = [-1, -1, 12, -1, 15, -1, 12, 18, -1, -1, 12, -1, 13, -1, 12, -1, -1, -1, 12, -1, 15, -1, 12, 11, -1, -1, 10, -1, 9, -1, 8, -1];
+  function villainStep(t, i) {
+    const b = VIL_BASS[i % 16];
+    tone2(hz(b, -3), 0.42, 'sawtooth', 1.1, t);                 // 低いベース(ずっしり)
+    tone2(hz(b, -2), 0.3, 'triangle', 0.5, t);
+    if (i % 4 === 0) tone2(48, 0.16, 'sine', 1.8, t);           // 重い足音
+    if (i % 8 === 4) { const s = ctx.createBufferSource(); s.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500; const g = ctx.createGain(); g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); s.connect(f); f.connect(g); g.connect(bgmGain); s.start(t); s.stop(t + 0.2); }
+    const m = VIL_MEL[i % 32];
+    if (m >= 0) tone2(hz(m, -1), 0.28, 'square', 0.22, t);      // ニヤリと笑うような ひくいメロディ
+    if (i % 16 === 14) tone2(hz(6, -1), 0.6, 'sawtooth', 0.18, t); // 増4度で 不気味に
+  }
   function bgmStep(t, i) {
+    if (bgmMode === 'villain') return villainStep(t, i);
     const boss = bgmMode === 'boss';
     const mel = boss ? MEL2 : MEL;
     const m = mel[i % mel.length];
@@ -131,7 +156,7 @@ const Sound = (() => {
     bgmMode = mode || 'normal';
     if (bgmOn) return;
     bgmOn = true; step = 0; nextTime = ctx.currentTime + 0.1;
-    const dur = () => (bgmMode === 'boss' ? 0.14 : 0.16);
+    const dur = () => (bgmMode === 'boss' ? 0.14 : bgmMode === 'villain' ? 0.21 : 0.16);
     timer = setInterval(() => {
       if (!ctx || muted) { nextTime = ctx ? ctx.currentTime + 0.1 : 0; return; }
       while (nextTime < ctx.currentTime + 0.25) { bgmStep(nextTime, step++); nextTime += dur(); }

@@ -146,7 +146,7 @@ body.touch #hint { bottom: calc(18px + var(--safe-b)); }
 
 .eyes-row { display: flex; justify-content: center; gap: 8px; margin: 0 0 8px; flex-wrap: wrap; }
 .eye-card { width: min(31vw, 180px); padding: 6px 6px 8px; background: #fff; border: 3px solid var(--ink); border-radius: 16px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.eye-card canvas { width: min(26vw, 128px); height: min(26vw, 128px); }
+.eye-card canvas { width: min(24vw, 110px); height: min(24vw, 110px); }
 .eye-card b { font-size: 17px; }
 .eye-card span { font-size: 14px; line-height: 1.35; opacity: 0.9; }
 .eye-card.good { border-color: var(--blue); background: #eef6ff; }
@@ -175,6 +175,65 @@ body.touch #hint { bottom: calc(18px + var(--safe-b)); }
 .meta-btns .sub-btn { margin: 0; font-size: 18px; padding: 4px 18px 5px; }
 .best { margin-top: 8px; font-size: 17px; }
 .best b { color: var(--red); font-size: 22px; }
+
+/* ---------- おばさんたたき ---------- */
+.start-row { display: flex; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+.start-row .big-btn { margin: 0; }
+.whack-btn { background: linear-gradient(#c07aff, var(--purple)); animation-delay: 0.8s; }
+.whack-lead { margin: 6px 0 0; font-size: clamp(12px, 3vw, 14px); line-height: 1.5; color: #555; }
+.whack-lead b { color: var(--purple); }
+.whack-best { display: inline-block; margin-left: 10px; font-size: 13px; color: var(--ink); }
+.whack-best b { color: var(--red); font-size: 16px; }
+#whackHud { position: fixed; top: calc(8px + var(--safe-t)); left: calc(10px + var(--safe-l)); right: calc(10px + var(--safe-r)); pointer-events: none; z-index: 6; display: flex; align-items: flex-start; gap: 10px; }
+.w-time { order: 2; margin: 0 auto; min-width: 2.4ch; text-align: center; padding: 0 18px 2px; font-size: clamp(34px, 7vw, 56px); font-variant-numeric: tabular-nums; background: var(--cream); border: 4px solid var(--ink); border-radius: 22px; box-shadow: 0 4px 0 rgba(47, 42, 58, 0.45); }
+.w-time.warn { color: #fff; background: #ff5a5e; animation: pulse 0.4s infinite alternate; }
+.w-score { order: 1; display: flex; align-items: baseline; gap: 8px; padding: 2px 14px 3px; background: var(--cream); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 rgba(47, 42, 58, 0.45); }
+.w-score span { font-size: 14px; opacity: 0.8; }
+.w-score b { font-size: clamp(24px, 5vw, 36px); color: var(--red); -webkit-text-stroke: 0.5px var(--ink); font-variant-numeric: tabular-nums; min-width: 3ch; text-align: right; }
+.w-count { order: 3; padding: 4px 14px 5px; font-size: clamp(15px, 3.6vw, 20px); color: #fff; background: linear-gradient(#c56bff, #7a2fc0); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 rgba(47, 42, 58, 0.45); text-shadow: 0 1px 0 var(--ink); }
+.w-combo { position: fixed; top: calc(80px + var(--safe-t)); left: 50%; transform: translateX(-50%); font-size: clamp(22px, 5vw, 34px); color: #ffd24d; -webkit-text-stroke: 5px var(--ink); paint-order: stroke fill; }
+.w-combo:empty { display: none; }
+#whackResult { position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; z-index: 21; display: flex; flex-direction: column; justify-content: space-between; padding: calc(10px + var(--safe-t)) 12px calc(12px + var(--safe-b)); }
+.wr-top { text-align: center; }
+.wr-title { font-size: clamp(20px, 4.6vw, 34px); color: #fff; -webkit-text-stroke: 6px var(--ink); paint-order: stroke fill; text-shadow: 0 4px 0 rgba(47, 42, 58, 0.35); animation: pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.wr-score { display: inline-block; margin-top: 2px; padding: 2px 16px 4px; font-size: 18px; background: var(--cream); border: 3px solid var(--ink); border-radius: 16px; box-shadow: 0 3px 0 rgba(47, 42, 58, 0.45); }
+.wr-score b { font-size: clamp(26px, 5.6vw, 40px); color: var(--red); font-variant-numeric: tabular-nums; }
+.wr-sub { margin-top: 4px; font-size: clamp(12px, 3vw, 15px); color: var(--ink); background: rgba(255, 255, 255, 0.8); display: inline-block; padding: 2px 12px; border-radius: 12px; }
+.wr-btns { display: flex; justify-content: center; align-items: center; gap: 12px; pointer-events: auto; }
+.wr-btns .big-btn, .wr-btns .sub-btn { margin: 0; }
+@media (orientation: portrait) {
+  #whackHud { flex-wrap: wrap; justify-content: space-between; }
+  .w-time { order: 0; width: 100%; margin: 0 auto 4px; max-width: 160px; }
+  .w-score { order: 1; }
+  .w-count { order: 2; font-size: 14px; white-space: nowrap; padding: 4px 10px 5px; }
+  .w-combo { top: calc(120px + var(--safe-t)); }
+}
+/* タイトルが 1画面に おさまるように(高さが低いとき) */
+@media (max-height: 820px) {
+  .card.title-card { padding-top: 8px; padding-bottom: 10px; }
+  .logo h1 { font-size: clamp(26px, 6vw, 50px); margin-bottom: 0; }
+  .logo-small { font-size: 13px; }
+  .lead { margin: 2px 0 6px; font-size: clamp(12px, 2.8vw, 15px); line-height: 1.45; }
+  .eye-card canvas { width: min(22vw, 84px); height: min(22vw, 84px); }
+  .eye-card { padding: 4px 6px 6px; }
+  .eye-card b { font-size: 15px; }
+  .eye-card span { font-size: 12px; }
+  .diff-btn, .stage-btn { padding: 3px 10px 5px; }
+  .diff-btn b, .stage-btn b { font-size: 16px; }
+  .diff-btn span, .stage-btn span { font-size: 12px; }
+  .start-row { margin-top: 6px; }
+  .start-row .big-btn { padding: 6px 28px 8px; font-size: clamp(20px, 4.6vw, 26px); }
+  .whack-lead { margin-top: 4px; }
+  .meta-btns { margin-top: 4px; }
+  .best { margin-top: 4px; }
+}
+@media (max-height: 520px) {
+  .w-time { font-size: 30px; padding: 0 12px 1px; }
+  .w-score b { font-size: 22px; }
+  .w-count { font-size: 14px; }
+  .wr-title { font-size: 20px; -webkit-text-stroke-width: 4px; }
+  .wr-btns .big-btn { padding: 4px 26px 6px; font-size: 20px; }
+}
 
 /* ---------- あそびかた ---------- */
 .howto-card { width: min(96vw, 820px); }

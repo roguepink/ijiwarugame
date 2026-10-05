@@ -42,6 +42,17 @@
   </div>
 </div>
 
+<!-- おばさんたたき -->
+<div id="whackHud" class="hidden">
+  <div class="w-time" id="wTime">60</div>
+  <div class="w-score"><span>スコア</span><b id="wScore">0</b></div>
+  <div class="w-count" id="wCount">ごめんなさい 0人</div>
+  <div class="w-combo" id="wCombo"></div>
+</div>
+<div id="whackResult" class="hidden">
+  <div class="wr-top"><div class="wr-title" id="wrTitle"></div><div class="wr-score">スコア <b id="wrScore">0</b></div><div class="wr-sub" id="wrSub"></div></div>
+  <div class="wr-btns"><button id="btnWhackAgain" class="big-btn whack-btn">もういちど!</button><button id="btnWhackTitle" class="sub-btn">タイトルへ</button></div>
+</div>
 <div id="stickL" class="stick hidden"><div class="ring"></div><div class="knob"></div></div>
 <div id="stickR" class="stick right hidden"><div class="ring"></div><div class="knob"></div></div>
 
@@ -77,7 +88,11 @@
       <button class="stage-btn" data-stage="1"><b>2</b><span>キャベツライン</span><i>ステージ1を クリア</i></button>
       <button class="stage-btn" data-stage="2"><b>3</b><span>出荷フロア</span><i>ステージ2を クリア</i></button>
     </div>
-    <button id="btnStart" class="big-btn">パトロール 開始!</button>
+    <div class="start-row">
+      <button id="btnStart" class="big-btn">パトロール 開始!</button>
+      <button id="btnWhack" class="big-btn whack-btn">おばさんたたき!</button>
+    </div>
+    <p class="whack-lead">← 工場を歩いて 悪い人をさがす ／ ニョキニョキ 出てくる <b>5しゅるいの おばさん</b>を 60びょう 連打 →<span class="whack-best">たたきの ハイスコア <b id="whackBestTitle">0</b></span></p>
     <div class="meta-btns"><button id="btnHowto" class="sub-btn">あそびかた</button></div>
     <div class="best">ハイスコア <b id="bestTitle">0</b></div>
   </div>
@@ -137,6 +152,7 @@
 <script src="js/input.js"></script>
 <script src="js/entities.js"></script>
 <script src="js/render.js"></script>
+<script src="js/whack.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>

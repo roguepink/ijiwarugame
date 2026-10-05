@@ -610,9 +610,9 @@ const Art = (() => {
     const bob = run ? -Math.abs(Math.sin(wt)) * 3 : -Math.sin(t * 1.8) * 1;
     const lvl = B.level || 0;
     // トーン(いびり中・怒り中は濃い)
-    const toneA = B.state === 'defeated' ? 0.06 : B.state === 'scold' || B.state === 'windup' ? 0.42 : 0.3;
-    g.save(); g.translate(0, -10); drawTone(g, R * 1.1, toneA, t); g.restore();
-    softShadow(g, 32, 12, 0.45, 0, 2);
+    const toneA = (B.state === 'defeated' ? 0.06 : B.state === 'scold' || B.state === 'windup' ? 0.42 : 0.3) * (B.toneMul == null ? 1 : B.toneMul);
+    if (toneA > 0) { g.save(); g.translate(0, -10); drawTone(g, R * 1.1, toneA, t); g.restore(); }
+    if (!B.noShadow) softShadow(g, 32, 12, 0.45, 0, 2);
     g.save();
     g.scale(1.15, 1.15); // ひと回り大きい
     g.translate(0, bob);
@@ -633,8 +633,8 @@ const Art = (() => {
     fillStroke(g, SUIT, 2.4);
     g.save(); g.clip();
     g.fillStyle = SUIT_SH; g.beginPath(); g.ellipse(face * 9, -26, 9, 16, 0, 0, TAU); g.fill();
-    g.fillStyle = lvl >= 2 ? '#b03a8a' : lvl === 1 ? '#c2503a' : '#7a3a9a'; g.beginPath(); g.moveTo(-9, -36); g.lineTo(9, -36); g.lineTo(12, -16); g.lineTo(-12, -16); g.closePath(); g.fill(); // 色つきエプロン(主任)
-    g.fillStyle = '#ffd24d'; g.fillRect(-face * 14 - 3, -36, 7, 6); // 金のバッジ
+    g.fillStyle = B.apron || (lvl >= 2 ? '#b03a8a' : lvl === 1 ? '#c2503a' : '#7a3a9a'); g.beginPath(); g.moveTo(-9, -36); g.lineTo(9, -36); g.lineTo(12, -16); g.lineTo(-12, -16); g.closePath(); g.fill(); // 色つきエプロン(主任)
+    g.fillStyle = B.badge || '#ffd24d'; g.fillRect(-face * 14 - 3, -36, 7, 6); // 金のバッジ
     g.restore();
     // うで: 指示棒 / 腰に手
     const arm = (sx, ax, ay, hx, hy) => {
@@ -671,10 +671,11 @@ const Art = (() => {
     else if (st === 'defeated') eyes = { mode: 'tear', mean: 0.1, size: R / 14, browUp: 2, lashes: true, bags: true };
     else {
       const look = B.look || { x: face * 0.6, y: 0.2 };
-      eyes = { mean: st === 'scold' || st === 'windup' ? 1 : 0.9, grin: true, look, size: R / 14, lashes: true, bags: true, wrinkles: true, bloodshot: st === 'windup' || st === 'shout', vein: st === 'scold' || st === 'windup' || B.hitFlash > 0, smirk: st === 'seek' || st === 'enter' ? 1 : 0, browThick: 2.1 };
+      const mean = B.mean != null ? B.mean : 0.9;
+      eyes = { mean: st === 'scold' || st === 'windup' ? Math.min(1, mean + 0.1) : mean, grin: B.grin != null ? B.grin : true, look, size: R / 14, lashes: B.lashes != null ? B.lashes : true, bags: B.bags != null ? B.bags : true, wrinkles: B.wrinkles != null ? B.wrinkles : true, bloodshot: st === 'windup' || st === 'shout' || !!B.bloodshot, vein: st === 'scold' || st === 'windup' || B.hitFlash > 0 || !!B.vein, smirk: st === 'seek' || st === 'enter' ? 1 : 0, browThick: B.browThick || 2.1 };
     }
     eyes.t = t;
-    drawHoodHead(g, { r: R, face, eyes, perm: true, mask: lvl >= 1 ? '#ffe4ec' : MASK, skin: '#f3cfae' });
+    drawHoodHead(g, { r: R, face, eyes, perm: true, mask: B.mask || (lvl >= 1 ? '#ffe4ec' : MASK), skin: B.skin || '#f3cfae', hood: B.hood, hoodSh: B.hoodSh });
     // ほうれい線はマスクで見えないので、こめかみのシワと眉間のシワ
     g.strokeStyle = 'rgba(90,60,110,0.6)'; g.lineWidth = 1.6; g.lineCap = 'round';
     g.beginPath(); g.moveTo(-3, -R * 0.12); g.lineTo(-1.5, R * 0.06); g.moveTo(3, -R * 0.12); g.lineTo(1.5, R * 0.06); g.stroke();

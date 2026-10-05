@@ -51,6 +51,8 @@ const Input = (() => {
     canvas.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
     for (const ev of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(ev, (e) => e.preventDefault());
     canvas.addEventListener('pointerdown', (e) => {
+      // たたきゲーム: タップそのものを使う(スティックにしない)。連打もぜんぶ届く
+      if (hooks.onTap && hooks.onTap(e.clientX, e.clientY, e.pointerType)) { if (e.pointerType !== 'mouse') touchUsed = true; if (hooks.onFirstInput) hooks.onFirstInput(); return; }
       if (e.pointerType === 'mouse') {
         if (e.button !== 0) return;
         mouse.down = true; mouse.seen = true; mouse.x = e.clientX; mouse.y = e.clientY;

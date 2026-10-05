@@ -9,7 +9,7 @@ const UI = {
   last: {},
   init() {
     for (const id of ['hud', 'hpFill', 'hpText', 'score', 'combo', 'comboN', 'comboM', 'comboFill', 'timer', 'stageLabel', 'gauge', 'gaugeFill', 'gaugeText', 'bossBar', 'bossFill', 'bossName', 'weapon', 'weaponName', 'weaponUses', 'btnSound', 'btnPause', 'toast', 'banner', 'hint',
-      'title', 'pause', 'result', 'touchHints', 'thL', 'thR', 'btnStart', 'btnResume', 'btnQuit', 'btnRetry', 'btnNext', 'btnToTitle', 'bestTitle', 'resTitle', 'resRank', 'resMsg', 'resScore', 'resNew', 'resStats', 'howto', 'btnHowto', 'btnHowtoClose', 'eyeGood', 'eyeBad', 'eyeBoss', 'legendPics']) {
+      'title', 'pause', 'result', 'touchHints', 'thL', 'thR', 'btnStart', 'btnResume', 'btnQuit', 'btnRetry', 'btnNext', 'btnToTitle', 'bestTitle', 'resTitle', 'resRank', 'resMsg', 'resScore', 'resNew', 'resStats', 'howto', 'btnHowto', 'btnHowtoClose', 'eyeGood', 'eyeBad', 'eyeBoss', 'legendPics', 'btnWhack', 'btnWhackAgain', 'btnWhackTitle', 'whackBestTitle']) {
       this.el[id] = $(id);
     }
   },
@@ -168,9 +168,27 @@ function refreshTitle() {
   const cl = clearedStages();
   document.querySelectorAll('[data-stage]').forEach((b) => { const n = +b.dataset.stage; b.classList.toggle('on', G.selStage === n); b.classList.toggle('lock', n > cl); });
   UI.el.bestTitle.textContent = bestFor(G.diffKey).toLocaleString('en-US');
+  UI.el.whackBestTitle.textContent = whackBest().toLocaleString('en-US');
 }
+// ---------- おばさんたたき ----------
+function startWhack() {
+  Sound.init();
+  if (G.state === 'whack') Whack.stop();
+  G.state = 'whack'; G.paused = false;
+  G.diff = CONFIG.diff[G.diffKey];
+  UI.last = {};
+  for (const id of ['title', 'pause', 'result', 'howto', 'hud', 'hint']) UI.show(id, false);
+  Input.releaseAll();
+  Render.resize(true);
+  Whack.start();
+  requestWakeLock();
+  armBackGuard();
+}
+function whackBest() { try { return parseInt(localStorage.getItem('harisen_whack_best') || '0', 10) || 0; } catch (e) { return 0; } }
+
 function toTitle() {
   Sound.stopBgm();
+  if (G.state === 'whack') Whack.stop();
   G.state = 'title'; G.paused = false;
   G.diff = CONFIG.diff[G.diffKey];
   G.stage = G.selStage;
@@ -182,15 +200,17 @@ function toTitle() {
   refreshTitle();
 }
 function setPaused(p) {
-  if (G.state !== 'playing') return;
+  if (G.state !== 'playing' && G.state !== 'whack') return;
   G.paused = p;
+  Whack.S.paused = p && G.state === 'whack';
   UI.show('pause', p);
   if (p) Input.releaseAll();
   else { $('pauseMsg').classList.add('hidden'); armBackGuard(); }
 }
 // 画面のはしの操作などで止めたときは、なぜ止まったかをポーズ画面に書く
 function pauseFor(reason) {
-  if (G.state !== 'playing') return;
+  if (G.state !== 'playing' && G.state !== 'whack') return;
+  if (G.state === 'whack' && Whack.S.phase !== 'play') return;
   const msg = $('pauseMsg');
   if (reason === 'back') msg.innerHTML = '画面の はしを さわって 「もどる」に なりかけたので<br>とめました。<b>「つづける」</b>で そのまま あそべます';
   else msg.innerHTML = 'ゲームの 画面が うしろに かくれたので とめました。<br><b>「つづける」</b>で そのまま あそべます';
@@ -272,6 +292,7 @@ function updateCamera(dt) {
 
 // ---------- 1ステップ進める ----------
 function step(h) {
+  if (G.state === 'whack') { Whack.update(h); return; }
   if (G.state === 'title') {
     // タイトルの裏では作業員が勝手に動いている(デモ)
     for (const w of G.workers) updateWorker(w, h);
@@ -301,6 +322,7 @@ function loop(ts) {
     let rem = dt * scale;
     while (rem > 1e-6) { const h = Math.min(rem, 1 / 60); step(h); rem -= h; }
   }
+  if (G.state === 'whack') { Whack.draw(G.clock); Whack.updateHud(); return; }
   Render.draw(G.clock);
   if (G.state !== 'title') { Render.drawMini(); UI.updateHud(); }
 }
@@ -349,17 +371,22 @@ function boot() {
       if (code === 'KeyP' || code === 'Escape') { if (G.state === 'playing') setPaused(!G.paused); }
       else if (code === 'KeyM') toggleMute();
       else if (code === 'Enter') {
-        if (G.state === 'title') startGame(G.selStage);
+        if (G.state === 'whack') { if (Whack.S.phase === 'result') startWhack(); else if (G.paused) setPaused(false); }
+        else if (G.state === 'title') startGame(G.selStage);
         else if (!UI.el.result.classList.contains('hidden')) { if (!UI.el.btnNext.classList.contains('hidden')) startGame(G.stage + 1); else startGame(G.state === 'clear' ? 0 : G.stage); }
         else if (G.paused) setPaused(false);
       }
     },
     onStick(side) { UI.el[side === 'L' ? 'thL' : 'thR'].classList.add('gone'); },
     onEdge() { showEdgeGuard(); },
+    onTap(x, y) { return G.state === 'whack' ? Whack.tap(x, y) : false; },
     onFirstInput() { Sound.init(); if (Input.isTouch()) document.body.classList.add('touch'); },
   });
 
   UI.el.btnStart.addEventListener('click', () => startGame(G.selStage));
+  UI.el.btnWhack.addEventListener('click', startWhack);
+  UI.el.btnWhackAgain.addEventListener('click', startWhack);
+  UI.el.btnWhackTitle.addEventListener('click', toTitle);
   UI.el.btnRetry.addEventListener('click', () => startGame(G.state === 'clear' && G.stage === CONFIG.stages.length - 1 ? 0 : G.stage));
   UI.el.btnNext.addEventListener('click', () => startGame(G.stage + 1));
   UI.el.btnToTitle.addEventListener('click', toTitle);
@@ -392,7 +419,7 @@ function boot() {
 
   // スマホのツールバーの出入りで 何度も続けて大きさが変わるので、落ち着いてから1回だけ合わせる
   let resizeTimer = 0;
-  const queueResize = (ms) => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => Render.resize(), ms); };
+  const queueResize = (ms) => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { Render.resize(); if (G.state === 'whack') Whack.resize(); }, ms); };
   window.addEventListener('resize', () => queueResize(150));
   window.addEventListener('orientationchange', () => queueResize(300));
   document.addEventListener('visibilitychange', () => { if (document.hidden) pauseFor('hidden'); else { if (G.state === 'playing') requestWakeLock(); Sound.init(); } });
@@ -402,7 +429,7 @@ function boot() {
   setupBackGuard();
 
   // 動作確認用: URL に ?debug を付けるとコンソールから状態を触れる
-  if (/[?&]debug/.test(location.search)) window.__harisen = { G, CONFIG, perf, Art, Render, workerEyes, workerPose, startGame, endGame, stageClear, resetGame, setPaused, step, swing, hitWorker, hitBoss, spawnBoss, reform, relapse, makeWorker, moveBody, findPath, toTitle, showResult, Sound, Input };
+  if (/[?&]debug/.test(location.search)) window.__harisen = { G, CONFIG, perf, Art, Render, Whack, startWhack, workerEyes, workerPose, startGame, endGame, stageClear, resetGame, setPaused, step, swing, hitWorker, hitBoss, spawnBoss, reform, relapse, makeWorker, moveBody, findPath, toTitle, showResult, Sound, Input };
 
   requestAnimationFrame(loop);
   // ホーム画面に追加・オフラインで起動できるように(https で公開したときだけ)
