@@ -12,9 +12,12 @@ const Sound = (() => {
   let nextTime = 0;
   let step = 0;
   let bgmMode = 'normal';
+  let held = false; // ポーズ中・画面がうしろ・ページをはなれた: 音をぜんぶ止めて、勝手に鳴りださない
   try { muted = localStorage.getItem('harisen_mute') === '1'; } catch (e) { /* 保存できなくても遊べる */ }
 
   function init() {
+    if (document.hidden) return; // 見えていないときは鳴らしはじめない
+    held = false;
     if (ctx) { if (ctx.state !== 'running' && ctx.state !== 'closed') { try { ctx.resume().catch(() => {}); } catch (e) { /* 無視 */ } } return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
@@ -32,8 +35,14 @@ const Sound = (() => {
     } catch (e) { ctx = null; }
   }
 
+  // 止める: 鳴っている音も BGM の予約も その場で止まる。次に init() を呼ぶまで 鳴らない
+  function suspend() {
+    held = true;
+    if (ctx && ctx.state === 'running') { try { ctx.suspend().catch(() => {}); } catch (e) { /* 無視 */ } }
+  }
+
   function tone(freq, dur, type, vol, slideTo, delay, dest) {
-    if (!ctx || muted) return;
+    if (!ctx || muted || held) return;
     const t0 = ctx.currentTime + (delay || 0);
     const o = ctx.createOscillator();
     const g = ctx.createGain();
@@ -47,7 +56,7 @@ const Sound = (() => {
     o.start(t0); o.stop(t0 + dur + 0.05);
   }
   function noise(dur, vol, freq, type, delay, q) {
-    if (!ctx || muted) return;
+    if (!ctx || muted || held) return;
     const t0 = ctx.currentTime + (delay || 0);
     const s = ctx.createBufferSource();
     s.buffer = noiseBuf;
@@ -158,7 +167,7 @@ const Sound = (() => {
     bgmOn = true; step = 0; nextTime = ctx.currentTime + 0.1;
     const dur = () => (bgmMode === 'boss' ? 0.14 : bgmMode === 'villain' ? 0.21 : 0.16);
     timer = setInterval(() => {
-      if (!ctx || muted) { nextTime = ctx ? ctx.currentTime + 0.1 : 0; return; }
+      if (!ctx || muted || held) { nextTime = ctx ? ctx.currentTime + 0.1 : 0; return; }
       while (nextTime < ctx.currentTime + 0.25) { bgmStep(nextTime, step++); nextTime += dur(); }
     }, 90);
   }
@@ -168,5 +177,5 @@ const Sound = (() => {
     try { localStorage.setItem('harisen_mute', m ? '1' : '0'); } catch (e) { /* 無視 */ }
     if (master) master.gain.value = m ? 0 : 0.55;
   }
-  return { init, sfx, startBgm, stopBgm, setMuted, isMuted: () => muted, setBgmMode: (m) => { bgmMode = m; } };
+  return { init, suspend, sfx, startBgm, stopBgm, setMuted, isMuted: () => muted, setBgmMode: (m) => { bgmMode = m; } };
 })();
