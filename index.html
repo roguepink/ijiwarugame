@@ -444,7 +444,7 @@ body.touch .controls .touch-only { display: block; }
 /* はじめの画面(Google Play 風: インストールして遊ぶ / このまま遊ぶ)の中身。見本は roguepink/sokai。 */
 window.INSTALL_GATE = {
   id: 'ijiwarugame',
-  name: 'ハリセン工場パトロール',
+  name: 'ハリセン工場'.split('').join('\u2060') + '\u200b' + 'パトロール'.split('').join('\u2060'), // 狭い画面では「ハリセン工場 / パトロール」で折る(\u2060 = 折らない印、\u200b = 折ってよい所)
   icon: 'icons/icon-192.png',
   color: '#e8445a',
   tagline: '工場の パトロールアクション',
